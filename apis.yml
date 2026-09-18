@@ -1,0 +1,81 @@
+name: thirds.ai
+description: >-
+  Turn one design into content at scale. thirds.ai makes editable templates from a text prompt, HTML, a picture, or
+  gallery and renders PDFs and images via a web app, REST API, or hosted MCP server. Outputs are PDF, PNG, JPEG, and
+  WebP.
+url: https://raw.githubusercontent.com/api-evangelist/thirds-ai/refs/heads/main/apis.yml
+created: '2026-09-18'
+modified: '2026-09-18'
+specificationVersion: '0.21'
+tags:
+  - pdf-automation
+  - image-automation
+  - document-generation
+  - html-to-pdf
+  - html-to-image
+  - template-rendering
+  - branded-content
+  - developer-tools
+  - mcp-server
+  - agent-native
+  - marketing-ops
+apis:
+  - name: thirds.ai REST API
+    description: >-
+      REST API for HTML-to-PDF, HTML-to-image, AI template generation, template editing, brand kits, rendering, and
+      batch operations. Bearer API key auth with idempotency support.
+    humanURL: https://thirds.ai/docs/api-reference
+    baseURL: https://thirds.ai/v1
+    tags:
+      - pdf-automation
+      - image-automation
+      - document-generation
+      - html-to-pdf
+      - html-to-image
+      - template-rendering
+      - branded-content
+      - developer-tools
+      - mcp-server
+      - agent-native
+      - marketing-ops
+    properties:
+      - type: OpenAPI
+        url: https://thirds.ai/v1/openapi.json
+      - type: Documentation
+        url: https://thirds.ai/docs
+      - type: LLMsTxt
+        url: https://thirds.ai/llms.txt
+  - name: thirds.ai MCP Server
+    description: >-
+      Hosted MCP server exposing thirds.ai tools (create_brand_kit, create_template, edit_template, publish_template,
+      render, create_batch, get_status, and more) over Streamable HTTP with bearer-token auth. Uses your existing
+      account, credits, and templates.
+    humanURL: https://thirds.ai/docs/mcp
+    baseURL: https://thirds.ai/mcp
+    tags:
+      - pdf-automation
+      - image-automation
+      - document-generation
+      - html-to-pdf
+      - html-to-image
+      - template-rendering
+      - branded-content
+      - developer-tools
+      - mcp-server
+      - agent-native
+      - marketing-ops
+    properties:
+      - type: MCPServer
+        url: https://thirds.ai/mcp
+      - type: Documentation
+        url: https://thirds.ai/docs/mcp
+      - type: LLMsTxt
+        url: https://thirds.ai/llms.txt
+maintainers:
+  - FN: thirds.ai
+    url: https://thirds.ai
+generated:
+  by: apis.io/add
+  model: claude-opus-4-8
+  confidence: 96
+  at: '2026-09-18T09:14:04.214Z'
