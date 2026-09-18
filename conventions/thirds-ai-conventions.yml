@@ -1,0 +1,89 @@
+generated: '2026-09-18'
+method: searched
+source: https://thirds.ai/docs (api-reference/shared, rate-limits, retry-and-download, webhooks) + openapi/thirds-ai-openapi.yml
+auth:
+  style: 'Bearer API key (Authorization: Bearer thirds_sk_v1_...) or __Host-thirds_session cookie with
+    x-csrf-token for browser writes'
+  docs: https://thirds.ai/docs/api-reference/shared
+idempotency:
+  mechanism: Idempotency-Key request header on create requests; a retry with the same key returns the
+    same job. Reusing a key with different input returns idempotency_conflict.
+  header: Idempotency-Key
+  coverage: full
+  note: Documentation instructs sending Idempotency-Key with every create request across the mutating
+    surface (Stripe-shaped).
+  docs: https://thirds.ai/llms.txt
+pagination:
+  style: cursor
+  params:
+  - cursor
+  - limit
+  response_fields:
+  - data
+  - next_cursor
+  error: invalid_cursor restarts the list
+  docs: https://thirds.ai/docs/api-reference
+request_id:
+  header: x-request-id
+  note: UUID on every response; matches error.request_id in the error envelope.
+  docs: https://thirds.ai/docs/api-reference/shared
+versioning:
+  style: URI path prefix /v1
+  current: v1 (spec info.version 1.0.0)
+  docs: https://thirds.ai/docs/api-reference
+error_envelope:
+  shape: '{error:{code, request_id, details?, category?, retry?, plan_limit?}}'
+  format: custom (not RFC 9457)
+  docs: https://thirds.ai/docs/errors
+rate_limit_signaling:
+  headers:
+  - Retry-After
+  no_headers:
+  - X-RateLimit-*
+  note: No remaining-request counter or X-RateLimit-* headers. On 429/503 the API returns Retry-After
+    (seconds) and error.retry.retry_after_seconds. Async jobs return 202 with a Location header to poll.
+  docs: https://thirds.ai/docs/rate-limits
+async_jobs:
+  note: Create returns 202 with Location; poll the job (queued/running/succeeded/failed/cancelled). Resolve
+    download.url against https://thirds.ai and fetch without the API key (signed link, 15 min).
+  docs: https://thirds.ai/docs/retry-and-download
+dry_run_mode:
+  state: partial
+  note: Preview endpoints (POST /v1/templates/preview, POST /v1/image-assets/preview) and the free live
+    preview let a caller rehearse without spending render credits, but there is no per-render dry_run
+    flag.
+reversibility:
+  overall: documented
+  note: 'Reversal paths exist across the mutating surface; some carry an explicit window (verified), others
+    are bounded by ''before completion'' (documented). A failed render is auto-reversed: it costs no credit.'
+  surfaces:
+  - write: createBatch
+    reversal: cancelBatch
+    operationId: cancelBatch
+    window: pending and queued rows only, before they render
+    grade: documented
+    docs: https://thirds.ai/docs/api-reference/batches
+  - write: createTemplateBuild/editTemplateBuild
+    reversal: cancelTemplateMessage
+    operationId: cancelTemplateMessage
+    window: while the message is pending; releases reserved credits
+    grade: documented
+    docs: https://thirds.ai/docs/api-reference/template-builds
+  - write: createWebhook
+    reversal: disableWebhook / enableWebhook / deleteWebhook
+    operationId: disableWebhook
+    window: any time (reversible enable/disable pair)
+    grade: verified
+    docs: https://thirds.ai/docs/webhooks
+  - write: createPdf/createImage
+    reversal: deletePdf / deleteImage; files auto-expire
+    operationId: deletePdf
+    window: files retained 30 days then auto-deleted; signed download link 15 minutes
+    grade: verified
+    docs: https://thirds.ai/security
+  - write: createTemplate
+    reversal: archiveTemplate
+    operationId: archiveTemplate
+    window: no documented un-archive endpoint
+    grade: documented
+    docs: https://thirds.ai/docs/api-reference/templates

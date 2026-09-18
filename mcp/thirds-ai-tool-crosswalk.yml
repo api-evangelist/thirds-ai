@@ -1,0 +1,130 @@
+generated: '2026-09-18'
+method: derived
+source: mcp/thirds-ai-mcp.yml tools bound to openapi/thirds-ai-openapi.yml operationIds
+note: MCP tool inputSchemas are auth-gated (bearer). Bindings map each tool to its backing REST operation(s)
+  by name and documented semantics; each tool inherits that operation's parameters/requestBody as its
+  real input contract.
+surfaces:
+  openapi: openapi/thirds-ai-openapi.yml
+  mcp: 'https://thirds.ai/mcp (gated: bearer API key required)'
+  graphql: null
+crosswalk:
+- tool: create_brand_kit
+  category: brand
+  rest:
+  - createBrandKit
+  binding: POST /v1/brand-kits
+  confidence: high
+- tool: update_brand_kit
+  category: brand
+  rest:
+  - updateBrandKit
+  binding: PATCH /v1/brand-kits/{brand_kit_id}
+  confidence: high
+- tool: set_brand_asset
+  category: brand
+  rest:
+  - createBrandAsset
+  - replaceBrandAsset
+  binding: POST/PUT /v1/brand-kits/{brand_kit_id}/assets
+  confidence: high
+- tool: list_brand_kits
+  category: brand
+  rest:
+  - listBrandKits
+  binding: GET /v1/brand-kits
+  confidence: high
+- tool: create_template
+  category: template-build
+  rest:
+  - createTemplateBuild
+  binding: POST /v1/template-builds
+  confidence: high
+- tool: edit_template
+  category: template-build
+  rest:
+  - editTemplateBuild
+  binding: POST /v1/template-builds/{build_id}/messages
+  confidence: high
+- tool: publish_template
+  category: template-build
+  rest:
+  - publishTemplateBuild
+  binding: POST /v1/template-builds/{build_id}/publish
+  confidence: high
+- tool: cancel_template_message
+  category: template-build
+  rest:
+  - cancelTemplateMessage
+  binding: DELETE /v1/template-builds/{build_id}/messages/{message_id}
+  confidence: high
+- tool: list_templates
+  category: template
+  rest:
+  - listTemplates
+  binding: GET /v1/templates
+  confidence: high
+- tool: save_template
+  category: template
+  rest:
+  - createTemplate
+  binding: POST /v1/templates (HTML, no AI)
+  confidence: high
+- tool: render
+  category: render
+  rest:
+  - createPdf
+  - createImage
+  binding: POST /v1/pdf or POST /v1/image depending on requested output
+  confidence: high
+  note: 'Composite: one tool fronts two REST render endpoints selected by output format.'
+- tool: create_batch
+  category: batch
+  rest:
+  - createBatch
+  binding: POST /v1/batches
+  confidence: high
+- tool: retry_batch
+  category: batch
+  rest:
+  - retryBatch
+  binding: POST /v1/batches/{id}/retry
+  confidence: high
+- tool: cancel_batch
+  category: batch
+  rest:
+  - cancelBatch
+  binding: POST /v1/batches/{id}/cancel
+  confidence: high
+- tool: get_status
+  category: status
+  rest:
+  - getTemplateBuild
+  - getPdf
+  - getImage
+  - getBatch
+  binding: GET on the relevant job/build resource
+  confidence: medium
+  note: Composite status reader across build, pdf, image and batch resources.
+mcp_only: []
+rest_only:
+- operationId: createImagePack
+  reason: Image-pack (multi-size) rendering not surfaced as a distinct MCP tool
+- operationId: createCarousel
+  reason: Carousel rendering not surfaced as a distinct MCP tool
+- operationId: createWebhook
+  reason: Webhook management is account-config, not an agent tool
+- operationId: createApiKey
+  reason: API-key management is account-config, not an agent tool
+- operationId: uploadImage
+  reason: Image-asset upload has no dedicated MCP tool
+- operationId: adaptTemplate
+  reason: Template size adaptation has no dedicated MCP tool
+- operationId: submitTestimonial
+  reason: Public/marketing endpoint, not an agent tool
+coverage:
+  tools: 15
+  tools_bound: 15
+  rest_operations: 69
+  rest_bound_est: 19
+  rest_only_notable: 7

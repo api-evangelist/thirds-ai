@@ -1,0 +1,29 @@
+generated: '2026-09-18'
+method: derived
+source: openapi/thirds-ai-openapi.yml + https://thirds.ai/docs and /security
+note: PDF/image rendering has no ratified domain interoperability standard, so domain_standard is honestly
+  absent (reward-only, not penalised). Cross-cutting conventions the contract genuinely implements are
+  asserted below with evidence.
+conformance:
+- id: rfc9457
+  conforms: false
+  evidence: Errors use a custom envelope {error:{code,request_id,...}} with content-type application/json,
+    not application/problem+json. See components.schemas.ErrorEnvelope.
+- id: idempotency
+  conforms: true
+  evidence: Idempotency-Key header accepted on every create request; idempotency_conflict error on key
+    reuse with different input. https://thirds.ai/llms.txt
+- id: pagination
+  conforms: true
+  evidence: Cursor-based pagination (cursor + limit params, invalid_cursor error) on list endpoints. openapi
+    paths GET /v1/templates, /v1/brand-kits, etc.
+- id: oauth2
+  conforms: false
+  evidence: No oauth2 securityScheme; auth is bearer API key (thirds_sk_v1_) plus a browser session cookie.
+- id: webhooks
+  conforms: true
+  evidence: Signed webhook deliveries with rotation, replay and test; events render.succeeded/failed/cancelled.
+    openapi /v1/webhooks*.
+- id: domain_standard
+  conforms: false
+  evidence: No ratified standard exists for template-driven PDF/image generation; none is claimed or implemented.

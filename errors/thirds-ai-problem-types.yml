@@ -1,0 +1,289 @@
+generated: '2026-09-18'
+method: derived
+source: openapi/thirds-ai-openapi.yml (ErrorEnvelope enum + 4xx/5xx responses) enriched from https://thirds.ai/docs/errors
+format: custom
+envelope: '{error:{code, request_id, message?, details?, category?, retry?, plan_limit?}}'
+envelope_note: Every backend response uses one error shape; content-type application/json (NOT application/problem+json
+  / RFC 9457). Every response also carries an x-request-id header matching error.request_id.
+http_status_types:
+- status: 400
+  meaning: Bad request / validation error
+- status: 401
+  meaning: Authentication required
+- status: 402
+  meaning: Payment/credit required
+- status: 403
+  meaning: Forbidden or account suspended
+- status: 404
+  meaning: Not found
+- status: 405
+  meaning: Method not allowed
+- status: 409
+  meaning: Conflict
+- status: 413
+  meaning: Request entity too large
+- status: 415
+  meaning: Unsupported media type
+- status: 422
+  meaning: Unprocessable entity
+- status: 429
+  meaning: Rate or concurrency limited
+- status: 431
+  meaning: Request headers too large
+- status: 500
+  meaning: Internal error
+- status: 503
+  meaning: Overloaded
+- status: 504
+  meaning: Upstream timeout
+error_code_count: 124
+error_codes:
+- code: account_suspended
+  remediation: Contact support@thirds.ai.
+- code: account_concurrency_limited
+  remediation: Wait for a live job to finish (16/account).
+- code: abuse_limited
+  remediation: null
+- code: ai_failure_limit_reached
+  remediation: null
+- code: ai_needs_paid_credits
+  remediation: Buy a credit pack or a paid plan; free credits do not fund AI work.
+- code: already_subscribed
+  remediation: null
+- code: auth_unavailable
+  remediation: null
+- code: batch_row_limit
+  remediation: null
+- code: billing_unavailable
+  remediation: null
+- code: brand_asset_account_limit_reached
+  remediation: null
+- code: brand_asset_invalid
+  remediation: null
+- code: brand_asset_kind_invalid
+  remediation: null
+- code: brand_asset_kind_mismatch
+  remediation: null
+- code: brand_asset_limit_reached
+  remediation: null
+- code: brand_asset_too_large
+  remediation: null
+- code: brand_asset_type_unsupported
+  remediation: null
+- code: brand_data_conflict
+  remediation: null
+- code: brand_font_glyphs_exceeded
+  remediation: null
+- code: brand_font_tables_invalid
+  remediation: null
+- code: brand_image_animated
+  remediation: null
+- code: brand_image_dimensions_invalid
+  remediation: null
+- code: brand_image_pixels_exceeded
+  remediation: null
+- code: brand_kit_colours_invalid
+  remediation: null
+- code: brand_kit_conflict
+  remediation: null
+- code: brand_kit_limit
+  remediation: null
+- code: brand_kit_name_invalid
+  remediation: null
+- code: brand_kit_not_found
+  remediation: null
+- code: brand_kit_patch_empty
+  remediation: null
+- code: brand_kit_tone_invalid
+  remediation: null
+- code: brand_kit_unavailable
+  remediation: null
+- code: captcha_rejected
+  remediation: null
+- code: checkout_superseded
+  remediation: null
+- code: cross_origin_rejected
+  remediation: null
+- code: csrf_rejected
+  remediation: Include the x-csrf-token from GET /v1/me on browser writes.
+- code: download_expired
+  remediation: Request a fresh signed link (links last 15 minutes).
+- code: email_already_set
+  remediation: null
+- code: gallery_template_not_found
+  remediation: null
+- code: generated_template_invalid
+  remediation: null
+- code: idempotency_conflict
+  remediation: Reuse the original input with the same key, or use a new Idempotency-Key.
+- code: image_asset_header_unsupported
+  remediation: null
+- code: image_asset_invalid
+  remediation: null
+- code: image_asset_limit
+  remediation: null
+- code: image_asset_not_found
+  remediation: null
+- code: image_asset_reference_invalid
+  remediation: null
+- code: image_asset_too_large
+  remediation: null
+- code: image_asset_type_unsupported
+  remediation: null
+- code: image_asset_unavailable
+  remediation: null
+- code: image_url_invalid
+  remediation: null
+- code: image_url_unavailable
+  remediation: null
+- code: insufficient_credits
+  remediation: Add credits via billing.
+- code: internal_error
+  remediation: null
+- code: invalid_cursor
+  remediation: Start a new list request without the stale cursor.
+- code: invalid_email
+  remediation: null
+- code: invalid_event
+  remediation: null
+- code: invalid_link
+  remediation: null
+- code: invalid_profile
+  remediation: null
+- code: invalid_request
+  remediation: Correct the fields listed in error.details.
+- code: invalid_upload
+  remediation: null
+- code: job_not_finished
+  remediation: null
+- code: key_concurrency_limited
+  remediation: null
+- code: key_limit_reached
+  remediation: null
+- code: method_not_allowed
+  remediation: Use a supported HTTP method for the route.
+- code: no_billing_customer
+  remediation: null
+- code: not_found
+  remediation: Verify the path, ID, and account.
+- code: operation_conflict
+  remediation: null
+- code: operation_limit_exceeded
+  remediation: null
+- code: operation_pending
+  remediation: null
+- code: overage_limit_reached
+  remediation: null
+- code: overage_unavailable
+  remediation: null
+- code: overloaded
+  remediation: null
+- code: playground_busy
+  remediation: null
+- code: playground_request_invalid
+  remediation: null
+- code: playground_selection_invalid
+  remediation: null
+- code: playground_session_limited
+  remediation: null
+- code: playground_unavailable
+  remediation: null
+- code: policy_version_stale
+  remediation: null
+- code: provider_unavailable
+  remediation: null
+- code: rate_limited
+  remediation: Wait for the time in Retry-After, then retry.
+- code: render_probe_busy
+  remediation: null
+- code: render_probe_failed
+  remediation: null
+- code: render_probe_not_configured
+  remediation: null
+- code: render_probe_required
+  remediation: null
+- code: render_probe_timeout
+  remediation: null
+- code: request_headers_too_large
+  remediation: null
+- code: request_too_large
+  remediation: null
+- code: resize_timeout
+  remediation: null
+- code: signed_out
+  remediation: null
+- code: spend_cap_reached
+  remediation: null
+- code: template_build_not_found
+  remediation: null
+- code: template_data_collection_limit
+  remediation: null
+- code: template_data_depth_limit
+  remediation: null
+- code: template_data_invalid
+  remediation: null
+- code: template_data_limit
+  remediation: null
+- code: template_depth_limit
+  remediation: null
+- code: template_draft_not_found
+  remediation: null
+- code: template_evaluation_error
+  remediation: null
+- code: template_invalid_filter_input
+  remediation: null
+- code: template_missing_data
+  remediation: null
+- code: template_output_limit
+  remediation: null
+- code: template_not_found
+  remediation: null
+- code: template_schema_complexity
+  remediation: null
+- code: template_schema_draft_unsupported
+  remediation: null
+- code: template_schema_invalid
+  remediation: null
+- code: template_schema_too_large
+  remediation: null
+- code: template_size_canvas_mismatch
+  remediation: null
+- code: template_size_data_overrides_too_large
+  remediation: null
+- code: template_size_duplicate_id
+  remediation: null
+- code: template_size_invalid_dimensions
+  remediation: null
+- code: template_size_invalid_id
+  remediation: null
+- code: template_size_invalid_name
+  remediation: null
+- code: template_sizes_too_large
+  remediation: null
+- code: template_sizes_too_many
+  remediation: null
+- code: template_source_limit
+  remediation: null
+- code: template_syntax_error
+  remediation: null
+- code: template_timeout
+  remediation: null
+- code: template_version_changed
+  remediation: null
+- code: template_work_limit
+  remediation: null
+- code: testimonial_busy
+  remediation: null
+- code: testimonial_invalid
+  remediation: null
+- code: testimonial_rate_limited
+  remediation: null
+- code: testimonial_unavailable
+  remediation: null
+- code: unauthorized
+  remediation: Send a valid API key or session.
+- code: unsupported_media_type
+  remediation: null
+- code: webhook_limit_reached
+  remediation: null
+docs: https://thirds.ai/docs/errors

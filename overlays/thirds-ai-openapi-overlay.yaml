@@ -1,0 +1,33 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for thirds.ai
+  version: 1.0.0
+  x-generated: '2026-09-18'
+  x-method: generated
+  x-source: apis.io enrichment pass
+extends: openapi/thirds-ai-openapi.yml
+actions:
+- target: $.info
+  update:
+    x-apis-io-enriched: '2026-09-18'
+    x-provider: thirds.ai
+    x-agent-surfaces:
+    - REST /v1
+    - MCP https://thirds.ai/mcp (remote, bearer)
+    x-error-format: custom envelope {error:{code,request_id}} (not RFC 9457)
+    x-idempotency: 'Idempotency-Key header on all create requests (coverage: full)'
+    x-rate-limit-signaling: Retry-After only; no X-RateLimit-* headers
+- target: $.info.contact
+  update:
+    name: thirds.ai support
+    email: support@thirds.ai
+    url: https://thirds.ai/support
+- target: $
+  update:
+    x-apis-io-tags:
+    - pdf-automation
+    - html-to-pdf
+    - html-to-image
+    - template-rendering
+    - mcp-server
+    - agent-native

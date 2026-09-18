@@ -1,0 +1,19 @@
+generated: '2026-09-18'
+method: searched
+source: https://thirds.ai/llms.txt, /pricing, /docs/api-reference/webhooks
+note: thirds.ai has no separate test/live key namespace; testing is done with real (free/trial) credits
+  plus no-cost rehearsal surfaces.
+modes:
+- name: Free tier
+  detail: Verified account gets 50 free credits/month with no card. Free credits do not pay for AI work.
+- name: Paid trial
+  detail: Starter plan 7-day trial for $1 including 500 trial credits.
+- name: Anonymous playground
+  detail: Up to 200 renders per browser per month with no account or key.
+- name: Free live preview
+  detail: Editor live preview, gallery-template copies and hand edits cost no credits.
+- name: Webhook test
+  detail: POST /v1/webhooks/{webhook_id}/test queues a signed sample render.succeeded event through the
+    real delivery worker; spends no credits and creates no render.
+test_key_prefixes: null
+test_values: null

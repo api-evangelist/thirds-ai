@@ -1,0 +1,328 @@
+# thirds.ai
+
+> Turn one design into content at scale.
+
+Create branded images and PDFs for your campaigns and clients. Automate each new version through our API or your AI tools.
+
+## What thirds.ai does
+
+- Makes editable templates from a text prompt, your own HTML, a picture, or the gallery. Reuse each template with new data.
+- Renders through the web app, the REST API at https://thirds.ai/v1, or the MCP server at https://thirds.ai/mcp.
+- Outputs: PDF, PNG, JPEG, and WebP. A PDF can hold up to 100 pages. An image can be 320 to 7680 pixels wide and 200 to 4320 pixels tall.
+- Keeps brand kits of logos, colours, and fonts. Select a kit for an AI build, or bind its fields in a template. A kit does not restyle hardcoded content.
+
+## What thirds.ai does not do
+
+- It does not load a page URL as the input. The API takes HTML text, or a saved template and a data object.
+- It does not make video, Excel files, or animated images.
+- A template starts as a PDF document or an image canvas. It does not turn one layout into every format on its own, so a new layout or aspect ratio can need edits.
+- It does not host finished files at a public address. A signed download link lasts 15 minutes, and the file stays in the account for 30 days.
+
+## Credits
+
+- A verified account gets 50 free credits every month with no card.
+- One finished PDF or image costs one credit. A failed render costs nothing.
+- An AI template build or image import costs 50 credits. A later message with words or HTML costs 25 credits, and a later message with a new picture costs 50. Free credits do not pay for AI work. An AI build, import, or edit needs trial, pack, or plan credits. Copying a gallery template, hand edits, and the live preview are free.
+- Credit packs cost $10 for 500 credits, $25 for 1,500, or $100 for 7,500, and last 12 months.
+- Paid plans give 2,500 (Starter, $29 a month), 10,000 (Growth, $79), or 40,000 (Scale, $199) credits a month. Extra credits on a paid plan cost $0.015 each. Starter has a 7-day trial for $1 with 500 trial credits.
+
+## Best recipes
+
+1. HTML to PDF: POST https://thirds.ai/v1/pdf with {"html": "..."}. If queued or running, poll GET /v1/pdf/{id} with an application deadline and stop on failed or cancelled. On succeeded, resolve download.url against https://thirds.ai and download it without the API key. See https://thirds.ai/docs/quickstart.
+2. HTML to image: POST https://thirds.ai/v1/image with {"html": "...", "image": {"format": "png", "width": 1200, "height": 630}}. See https://thirds.ai/html-to-image.
+3. Template plus data: copy a gallery template, then POST /v1/pdf or /v1/image with {"template_id": "tpl_...", "version": 1, "data": {...}}. See https://thirds.ai/docs/templates-with-data.
+
+Send an Idempotency-Key header with every create request, so a retry returns the same job. The OpenAPI contract is at https://thirds.ai/v1/openapi.json.
+
+## Product pages
+
+- [Turn one design into content at scale.](https://thirds.ai/): Create branded images and PDFs for your campaigns and clients. Automate each new version through our API or your AI tools.
+- [Pick a plan for images and PDFs.](https://thirds.ai/pricing): Compare thirds.ai pricing plans for PDFs and images: a free plan with 50 credits a month, paid plans from $29, yearly savings, and credit packs from $10.
+- [Security at thirds.ai](https://thirds.ai/security): How thirds.ai isolates renders, protects data, limits storage, makes backups, uses service providers, and handles security reports.
+- [Data processing agreement](https://thirds.ai/dpa): The thirds.ai data processing terms, including processing details, security measures, deletion, and the current service-provider list.
+- [Changelog](https://thirds.ai/changelog): Read current product updates from thirds.ai, with changes to templates, rendering, billing, and the public site.
+- [Privacy policy](https://thirds.ai/privacy): What thirds.ai stores about you and your documents, how long we keep it, who helps us run the service, and the rights you have over your data.
+- [Terms of service](https://thirds.ai/terms): The plain-language agreement for using thirds.ai: your account, your content, the rights you promise, credits, storage, and fair use.
+- [Acceptable use policy](https://thirds.ai/acceptable-use): What you cannot make or do with thirds.ai, what happens when a rule is broken, and how to report abuse or a rights problem.
+- [Refunds and cancellation](https://thirds.ai/refunds): What you pay for on thirds.ai, how the free plan, the $1 trial, and cancellation work, and when we give money or credits back.
+- [Cookie notice](https://thirds.ai/cookies): The two small cookies thirds.ai sets, what each one does, when each one ends, and how to block or delete cookies in your browser settings.
+- [Support](https://thirds.ai/support): How to reach thirds.ai support, what to include, and where to find help pages, status, refunds, and privacy requests.
+- [PDF and image use cases](https://thirds.ai/use-cases): Automate your PDFs and images. Make branded invoices, reports, quotes, social images, and static ads from one saved design. Pick a job and see a real example.
+- [Invoice PDF generator and API for branded invoices](https://thirds.ai/use-cases/invoices): Invoice PDF generator and API. Save your invoice template once with your logo, colours, and fonts. Then type in each client's line items, or send them from your own code.
+- [Report generator and PDF API for client reports](https://thirds.ai/use-cases/reports): Report generator and PDF API for client reports. Set up one report template, then add each month's results yourself or from your own code. Every report comes out in the same layout.
+- [Quote and receipt PDF generator](https://thirds.ai/use-cases/quotes-and-receipts): Make quotes, receipts, order confirmations, and gift vouchers with your logo and colours. Set up the PDF template once, then type in the next customer and download the file.
+- [Social media image generator: every size from one template](https://thirds.ai/use-cases/social-images): Make branded social media images from one saved template. Change the quote, product, or event details and download the story, square post, thumbnail, banner, and link preview as PNG, JPEG, or WebP.
+- [Static ad generator: ad variants in every size from one template](https://thirds.ai/use-cases/static-ads): Make static ad variants from one saved template. Change the headline, the offer, and the product photo, then download every ad size as PNG, JPEG, or WebP.
+- [HTML to PDF API](https://thirds.ai/html-to-pdf): HTML to PDF API and web app. Paste your HTML and get a clean PDF with your logo, colours, and fonts. Make your next invoice or report in seconds.
+- [HTML to image API: PNG, JPEG, WebP](https://thirds.ai/html-to-image): HTML to image API and web app. Make PNG, JPEG, and WebP images from one design, in every size you need. Use it for product cards, social images, and ads.
+- [AI template generator for PDFs and images](https://thirds.ai/ai-template-generator): Describe a PDF or image and get an editable template with your logo, colours, and fonts. Change the AI draft in the editor, save it, and make later files in the web app, from your own code, or from your AI tools.
+- [Image to editable template](https://thirds.ai/image-to-template): Turn an image into an editable template with your own logo, colours, and fonts. Check the design, save it, and make new images from it with new words and pictures.
+- [PDF and image template editor](https://thirds.ai/template-editor): Edit and save reusable PDF or image designs on a real canvas. Change the words, pictures, and layout, then make new files in the editor, from your own code, or from your AI tools.
+- [Brand kits for PDFs and images](https://thirds.ai/features/brand-kits): Keep each client's logo, colours, and fonts in a brand kit, and put it on any template with one click. Every PDF and image comes out in the same brand.
+- [Open Graph image generator and API](https://thirds.ai/open-graph-image-generator): Save one card design, then add each page's title and description to get its own 1200 × 630 Open Graph image. Use the web app, the API, or your AI tools.
+- [Our story: why we built thirds.ai](https://thirds.ai/our-story): Why we built thirds.ai for small teams that make the same branded PDFs and images again and again, what we chose to build, and how we treat your content.
+- [Partners](https://thirds.ai/partners): thirds.ai is listed on these directories.
+
+## Documentation
+
+- [Automate PDFs and images](https://thirds.ai/docs): Create a reusable design, make your first PDF or image, and use new data through the API or your AI tools.
+- [API endpoints and fields](https://thirds.ai/docs/api-reference): Find the endpoint, request fields, response types, and limits for PDFs, images, templates, brand kits, and webhooks.
+- [Account and API keys](https://thirds.ai/docs/api-reference/account): Manage API keys and account identity requests, with the required credentials and response fields for each endpoint.
+- [Batches](https://thirds.ai/docs/api-reference/batches): Render one saved template version once per data row, poll each row, retry failed rows, and download a ZIP of the files that succeeded.
+- [Brand kits](https://thirds.ai/docs/api-reference/brand-kits): Manage brand colours, logos, and fonts, then apply the same brand kit when you create a template or image.
+- [Carousels](https://thirds.ai/docs/api-reference/carousels): Render selected pages of one saved template version as images, poll each slide, retry failed slides, and download a ZIP of the files that succeeded.
+- [File downloads](https://thirds.ai/docs/api-reference/downloads): Download a finished PDF or image with its signed link, and check the response types and download limits.
+- [Image assets](https://thirds.ai/docs/api-reference/image-assets): Upload private images for your templates and renders, preview them, and check supported files and limits.
+- [Image packs](https://thirds.ai/docs/api-reference/image-packs): Render one saved template version at several sizes, poll each size, retry failed sizes, and download a ZIP of the files that succeeded.
+- [Image renders](https://thirds.ai/docs/api-reference/image): Create PNG, JPEG, or WebP images from HTML or saved templates, then check each render and download the result.
+- [PDF renders](https://thirds.ai/docs/api-reference/pdf): Create PDFs from HTML or saved templates, check each render, and read the result fields and limits.
+- [Public endpoints](https://thirds.ai/docs/api-reference/public): Read the public API contract and service facts, or submit a testimonial with the required safety check.
+- [Shared types and security](https://thirds.ai/docs/api-reference/shared): Look up shared request and response fields, error types, response headers, and API authentication schemes.
+- [AI template builds](https://thirds.ai/docs/api-reference/template-builds): Create an editable template with AI, send changes, read draft results, and publish the version you choose.
+- [Saved templates](https://thirds.ai/docs/api-reference/templates): Create and manage editable templates, preview changes, and publish fixed versions for repeat renders.
+- [Webhook endpoints](https://thirds.ai/docs/api-reference/webhooks): Manage webhook receivers, rotate secrets, check deliveries, and replay failed events for your account.
+- [API keys and requests](https://thirds.ai/docs/api): Create an API key, send a request from your server, and read the response.
+- [Make a CSV batch of PDFs or images](https://thirds.ai/docs/batch-renders): Upload a CSV, map columns to one template, check the cost, and download a ZIP of the files that succeed.
+- [Understand credits and billing](https://thirds.ai/docs/billing): Check what each action costs, follow reserved credits, and set limits on extra spending.
+- [Export branded carousel slides](https://thirds.ai/docs/carousels): Edit slides as pages of one template, choose the order, then export a PDF or a ZIP of images with a clear credit cost.
+- [Design and edit a template](https://thirds.ai/docs/design-a-template): Start with words, HTML, an image, or a gallery design, then apply your brand and publish a reusable template.
+- [Fix an error](https://thirds.ai/docs/errors): Find an API or render error code, its cause, and the next step.
+- [Common questions](https://thirds.ai/docs/faq): Short answers for your first file, templates, brand kits, API, MCP, billing, and account.
+- [Make reports, invoices, and ads from data](https://thirds.ai/docs/integrations/api-workflows): Map your own data to a saved template, create a PDF or PNG, and keep the result with a repeatable API workflow.
+- [Keep output files in S3 or R2](https://thirds.ai/docs/integrations/object-storage): Copy a checked PDF or image to your own private bucket and retry storage without creating the file again.
+- [Collect files when a webhook arrives](https://thirds.ai/docs/integrations/webhook-delivery): Build a signed webhook receiver, save events before replying, and collect each finished file without starting another render.
+- [Connect your AI agent](https://thirds.ai/docs/mcp): Set up MCP so your AI agent can build templates, create outputs, and check their results.
+- [Connect Antigravity to thirds.ai](https://thirds.ai/docs/mcp/antigravity): Add the thirds.ai MCP server to Google Antigravity with serverUrl and a bearer header.
+- [Connect ChatGPT to thirds.ai](https://thirds.ai/docs/mcp/chatgpt): Add the thirds.ai MCP server to ChatGPT Developer mode with an API key.
+- [Connect Claude Code to thirds.ai](https://thirds.ai/docs/mcp/claude-code): Add the thirds.ai MCP server to Claude Code with one command or a shared JSON file.
+- [Connect Claude Desktop to thirds.ai](https://thirds.ai/docs/mcp/claude-desktop): Connect Claude Desktop to thirds.ai through a local Streamable HTTP bridge.
+- [Connect Codex to thirds.ai](https://thirds.ai/docs/mcp/codex): Add the thirds.ai MCP server to Codex with a private bearer token environment variable.
+- [Connect Cursor to thirds.ai](https://thirds.ai/docs/mcp/cursor): Add the thirds.ai MCP server to Cursor with a private environment variable.
+- [Connect Grok to thirds.ai](https://thirds.ai/docs/mcp/grok): Add the thirds.ai MCP server to Grok on grok.com with a bearer API key.
+- [Connect Hermes to thirds.ai](https://thirds.ai/docs/mcp/hermes): Add the thirds.ai MCP server to Hermes Agent with a remote URL and a bearer header.
+- [Connect an HTTP MCP client to thirds.ai](https://thirds.ai/docs/mcp/http): Configure any compatible Streamable HTTP client or send MCP JSON-RPC requests directly.
+- [Connect Lovable to thirds.ai](https://thirds.ai/docs/mcp/lovable): Add the thirds.ai MCP server to Lovable as a custom chat connector with a bearer API key.
+- [Connect OpenCode to thirds.ai](https://thirds.ai/docs/mcp/opencode): Add the thirds.ai MCP server to OpenCode with a remote URL and a bearer header.
+- [Connect Replit to thirds.ai](https://thirds.ai/docs/mcp/replit): Add the thirds.ai MCP server to Replit Agent with a custom HTTPS URL and a bearer header.
+- [Connect VS Code to thirds.ai](https://thirds.ai/docs/mcp/vs-code): Add the thirds.ai MCP server to VS Code and keep the API key in secure input storage.
+- [Connect Warp to thirds.ai](https://thirds.ai/docs/mcp/warp): Add the thirds.ai MCP server to Warp with a Streamable HTTP URL and a bearer header.
+- [Connect Zed to thirds.ai](https://thirds.ai/docs/mcp/zed): Add the thirds.ai MCP server to Zed with a remote URL and a bearer header.
+- [Set PDF and image options](https://thirds.ai/docs/pdf-and-image-options): Choose paper size, page breaks, fonts, headers, and image dimensions for your design.
+- [Create your first PDF](https://thirds.ai/docs/quickstart): Send HTML to the thirds.ai API, wait for the result, and download your first PDF. Then make an image or render a saved template with data.
+- [Stay within rate limits](https://thirds.ai/docs/rate-limits): Plan request volume, live jobs, render size, and retries within the same limits on every plan.
+- [Retry requests and download files](https://thirds.ai/docs/retry-and-download): Retry without a second job, check the result, and save your finished PDF or image.
+- [Use templates with your data](https://thirds.ai/docs/templates-with-data): Fill a saved design with new values, check the data, and choose the version to render.
+- [Receive results with webhooks](https://thirds.ai/docs/webhooks): Let your server receive render results, verify each event, and recover missed deliveries.
+- [Move from wkhtmltopdf](https://thirds.ai/docs/wkhtmltopdf): Match your PDF options, check layout changes, and move one document type at a time.
+
+## Comparisons
+
+- [Compare thirds.ai with the tool you use today](https://thirds.ai/compare): Compare thirds.ai with other tools for repeat PDFs and images. See what each tool does well, what it costs, when we checked, and how to switch.
+- [PDFShift alternative for repeat invoices and reports](https://thirds.ai/compare/pdfshift): Compare PDFShift and thirds.ai for invoice and report PDFs, including HTML input, saved designs, file-size billing, and migration steps.
+- [Bannerbear alternative for repeat branded images](https://thirds.ai/compare/bannerbear): Compare Bannerbear and thirds.ai for recurring product cards and campaign images, including template editing, integrations, PDF costs, and repeat use.
+- [Adkit alternative for reusable static ad designs](https://thirds.ai/compare/adkit): Compare Adkit and thirds.ai for static ads. Adkit finds and tracks ads. thirds.ai turns one ad design into many versions. See features and prices.
+- [DocRaptor alternative for repeat client PDFs](https://thirds.ai/compare/docraptor): Compare DocRaptor and thirds.ai for recurring client documents, including Prince layout features, editable templates, output types, and monthly prices.
+- [Carbone alternative for HTML-designed PDFs](https://thirds.ai/compare/carbone): Compare Carbone and thirds.ai for repeat documents. Carbone fills Word and Excel templates. thirds.ai fills HTML templates you edit in the browser or with AI.
+- [Placid alternative for repeat images and documents](https://thirds.ai/compare/placid): Compare Placid and thirds.ai for recurring image and PDF work, including template editing, workflow connections, page credits, and how to switch.
+- [Templated alternative for repeat branded files](https://thirds.ai/compare/templated): Compare Templated and thirds.ai for recurring images and PDFs, including editable designs, AI creation, workflow connections, and matched annual pricing.
+- [HTML/CSS to Image alternative for repeat image work](https://thirds.ai/compare/html-css-to-image): Compare HTML/CSS to Image and thirds.ai for product and link-preview images, including HTML input, saved designs, storage, and pricing limits.
+- [Orshot alternative for repeat image and PDF campaigns](https://thirds.ai/compare/orshot): Compare Orshot and thirds.ai for recurring campaign files, with design inputs, publishing options, PDF page costs, and current plan terms.
+- [APITemplate.io alternative for PDF and image work](https://thirds.ai/compare/apitemplate-io): Compare APITemplate.io and thirds.ai for repeat PDFs and images, including editors, integrations, monthly prices, and how to switch.
+- [CraftMyPDF alternative for recurring business PDFs](https://thirds.ai/compare/craftmypdf): Compare CraftMyPDF and thirds.ai for recurring business PDFs, including editors, PDF tools, monthly prices, and how to switch.
+- [cloudlayer.io alternative for repeat PDFs and images](https://thirds.ai/compare/cloudlayer): Compare cloudlayer.io and thirds.ai for repeat PDFs and images, including HTML, URL capture, editors, storage, monthly prices, and how to switch.
+- [PDFMonkey alternative for PDF and image templates](https://thirds.ai/compare/pdfmonkey): Compare PDFMonkey and thirds.ai for saved PDF and image templates, HTML control, API delivery, how long files stay, credit limits, and how to switch.
+- [Robolly alternative for repeat images and PDFs](https://thirds.ai/compare/robolly): Compare Robolly and thirds.ai for reusable images and PDFs, editor control, render links, MCP, credit costs, workflow tools, and how to switch.
+- [Puppeteer and Playwright alternative](https://thirds.ai/compare/puppeteer-playwright): Compare self-hosted Puppeteer or Playwright with thirds.ai for browser control, managed rendering, security work, limits, and total cost.
+- [Best HTML to PDF APIs for repeat documents](https://thirds.ai/compare/best-html-to-pdf-apis): Compare eight HTML to PDF APIs for repeat documents. See who each tool suits, its limits, and our dated sources.
+- [Best Bannerbear alternatives for repeat images](https://thirds.ai/compare/best-bannerbear-alternatives): Compare eight Bannerbear alternatives for making campaign images again and again. See who each tool suits, its limits, and our dated sources.
+
+## Blog
+
+- [Convert an SVG to a PNG in your browser](https://thirds.ai/blog/convert-svg-to-png): Drop a still SVG on the free converter, choose a size, and download a PNG, JPEG, or WebP. The file stays on your computer.
+- [Make a UK business card PDF](https://thirds.ai/blog/make-a-uk-business-card-pdf): Pick one of five UK card designs, type the name and contact lines, and download an 85 by 55 millimetre PDF.
+- [How do I control page breaks, headers, and fonts in HTML to PDF?](https://thirds.ai/blog/html-to-pdf-page-breaks-headers-fonts): Make a two-page PDF with clean page breaks, a repeated header, and page numbers, then keep the same layout for your next report.
+- [Make a PDF certificate for each learner with a certificate generator API](https://thirds.ai/blog/certificates-pdf-from-template-data): Save one course certificate design, then send each learner's name, course, and date to the PDF certificate API and get a branded PDF back for each person.
+- [Create branded PDFs and images for clients](https://thirds.ai/blog/create-branded-pdfs-and-images): Save a design for your client invoices or campaign images, then fill it with new data in the editor, API, or AI tools.
+- [Build a brand kit for your PDFs and images](https://thirds.ai/blog/how-to-build-a-brand-kit): Save each client's colours, logo, and fonts, then use them in AI drafts or template fields for repeated PDFs and images.
+- [Generate invoice PDFs from JSON in Node.js](https://thirds.ai/blog/invoice-pdfs-from-json-nodejs): Use Node.js to send invoice data to a saved design, poll under a deadline, and check each PDF before saving it.
+- [Make invoice PDFs from template data](https://thirds.ai/blog/invoice-pdfs-from-template-data): Set up invoice fields and totals, send each client's data to a saved design, and keep PDF requests safe to retry.
+- [Make static ad variants with a saved design](https://thirds.ai/blog/make-static-ad-variants-from-one-template): Reuse a square ad design with three sets of headlines, offers, and product data. Export each variant through the editor or image API.
+- [Open Graph images: the complete guide](https://thirds.ai/blog/open-graph-images-complete-guide): Set up link-preview sizes, meta tags, and image URLs, then reuse a saved design to make a card for each page through the API.
+- [Make Open Graph images from HTML](https://thirds.ai/blog/open-graph-images-from-html): Render a 1200 by 630 link-preview image from HTML, then add data fields to make a new card for each page.
+- [Generate PNG and WebP images from HTML in Python](https://thirds.ai/blog/png-webp-images-from-html-python): Use Python to render HTML as PNG, WebP, or JPEG, poll for the result, and reuse the design with changing data.
+- [Rebuild an image as an editable template](https://thirds.ai/blog/rebuild-an-image-as-an-editable-template): Rebuild a source image as an editable branded design, check the result, then change its text and images for the next campaign.
+- [Static ad examples: 15 editable campaign layouts](https://thirds.ai/blog/static-ad-examples-15-formats): Choose a static ad layout for a product, offer, event, or review, then reuse it with new campaign data. Includes 15 gallery templates.
+- [Guides to PDF and image automation](https://thirds.ai/blog): Learn to turn a design into repeatable content for campaigns and clients, with real templates, data examples, and API recipes.
+
+## Template gallery
+
+- [Template gallery](https://thirds.ai/gallery): Pick a ready-made design and make it yours. Then type in new details to make each PDF or image.
+- [Creator workshop ad](https://thirds.ai/gallery/creator-workshop): Pair a photo with a hook and offer, then reuse it for new campaigns.
+- [Product spotlight](https://thirds.ai/gallery/product-spotlight): Show one product with a clear headline, then swap it for each new campaign.
+- [Campaign results report](https://thirds.ai/gallery/campaign-report): Share each campaign result and next step in a PDF with the same layout.
+- [Client invoice](https://thirds.ai/gallery/client-invoice): Make a branded PDF invoice for each client, with line items and totals.
+- [Project brief](https://thirds.ai/gallery/project-brief): Turn a plan into a clear PDF brief with goals, milestones, and owners.
+- [Product launch square](https://thirds.ai/gallery/product-launch): Make a bold square image to announce a new product release.
+- [Event promo](https://thirds.ai/gallery/event-promo): Share an event date, topic, and action in one wide, reusable image.
+- [Service proposal](https://thirds.ai/gallery/service-proposal): Share the work, timeline, and price in one clear client proposal.
+- [Monthly report](https://thirds.ai/gallery/monthly-report): Make each monthly PDF report from one layout with fresh results and next steps.
+- [Course certificate](https://thirds.ai/gallery/completion-certificate): Give each learner a named PDF certificate for finishing a course.
+- [Packing slip](https://thirds.ai/gallery/packing-slip): List an order's items and delivery address on one reusable PDF slip.
+- [Customer testimonial](https://thirds.ai/gallery/social-quote): Turn a short customer story into a square social image, with a quote, name, and brand colours.
+- [Seasonal offer](https://thirds.ai/gallery/seasonal-sale): Put an offer, price, and next step in one bold square post.
+- [Team announcement](https://thirds.ai/gallery/team-announcement): Share a new teammate or company update in one wide image.
+- [Meeting agenda](https://thirds.ai/gallery/meeting-agenda): Give your team a clear aim, schedule, and space for next steps.
+- [Hero product ad](https://thirds.ai/gallery/hero-product-ad): Show one product, its price, and one clear action in a square ad.
+- [Testimonial ad](https://thirds.ai/gallery/testimonial-ad): Turn one customer quote and a star rating into a social ad.
+- [Before and after ad](https://thirds.ai/gallery/before-after-ad): Put two panels side by side to show the change your product makes.
+- [Countdown offer ad](https://thirds.ai/gallery/countdown-offer-ad): Count down the days left on an offer in a tall story image.
+- [Feature list ad](https://thirds.ai/gallery/feature-list-ad): List three or four checked features under one clear headline.
+- [Price anchor ad](https://thirds.ai/gallery/price-anchor-ad): Show the old price struck through and the new price large with a savings tag.
+- [App screenshot ad](https://thirds.ai/gallery/app-screenshot-ad): Frame one app screenshot in a phone with a headline and a store action.
+- [Comparison ad](https://thirds.ai/gallery/comparison-ad): Compare your product with the old way in a two-column table of checks and crosses.
+- [Stat callout ad](https://thirds.ai/gallery/stat-callout-ad): Lead with one bold number, a clear claim, and its source in a wide image.
+- [Quote card ad](https://thirds.ai/gallery/quote-card-ad): Set one bold quote in large block type on a solid colour.
+- [Seasonal drop ad](https://thirds.ai/gallery/seasonal-drop-ad): Announce a seasonal product drop with a photo, a colour band, and a date.
+- [Event invite ad](https://thirds.ai/gallery/event-invite-ad): Invite people to an event with the date, place, speakers, and an RSVP action.
+- [Webinar ad](https://thirds.ai/gallery/webinar-ad): Promote a webinar with the title, date and time, two speakers, and a register action.
+- [Job ad](https://thirds.ai/gallery/job-ad): Post a job with the role, the company line, three points, and an apply action.
+- [Newsletter signup ad](https://thirds.ai/gallery/newsletter-signup-ad): Ask for sign-ups with the newsletter name, one benefit, and a drawn input box.
+- [Open Graph card](https://thirds.ai/gallery/open-graph-card): Make a wide link preview image for each web page from one design.
+- [Price quote](https://thirds.ai/gallery/quote-estimate): Send a priced quote with line items, a validity date, and a total.
+- [Payment receipt](https://thirds.ai/gallery/payment-receipt): Make a PDF receipt for each payment with the items, payment method, and paid stamp.
+- [Letterhead letter](https://thirds.ai/gallery/letterhead-letter): Write a business letter on a letterhead with a logo and a signature line.
+- [Report card](https://thirds.ai/gallery/report-card): Score a period on one page with a metric table, targets, results, and a summary.
+- [Gift voucher](https://thirds.ai/gallery/gift-voucher): Give a voucher with the value, a code, the use-by date, and the terms.
+- [Purchase order](https://thirds.ai/gallery/purchase-order): Send a clear, approved purchase order to a supplier from one saved design.
+- [Timesheet](https://thirds.ai/gallery/timesheet): Turn a week or two of hours into a neat timesheet that a manager can sign.
+- [Event ticket](https://thirds.ai/gallery/event-ticket): Print a DL-size ticket with a tear-off stub for each guest at your event.
+- [Price list](https://thirds.ai/gallery/price-list): Share a clean one-page price list that you can update whenever prices change.
+- [YouTube thumbnail](https://thirds.ai/gallery/youtube-thumbnail): Make a bold video thumbnail with a big title, a presenter photo, and one badge.
+- [Podcast episode card](https://thirds.ai/gallery/podcast-episode-card): Announce each podcast episode with a big episode number, the title, and the guest.
+- [Property listing ad](https://thirds.ai/gallery/property-listing-ad): Show a home for sale with its photo, price, address, and key facts on one card.
+- [Email header](https://thirds.ai/gallery/email-header): Open each newsletter with a branded banner that names the edition and the main story.
+- [Attendance certificate](https://thirds.ai/gallery/attendance-certificate): Give each attendee a named certificate for coming to an event.
+- [Achievement certificate](https://thirds.ai/gallery/achievement-certificate): Recognise a learner with a named achievement, programme, and result.
+- [Credit note](https://thirds.ai/gallery/credit-note): Issue a clear credit against an invoice with the reason and new total.
+- [Delivery note](https://thirds.ai/gallery/delivery-note): Pack each shipment with a delivery note listing the customer and items.
+- [Expense report](https://thirds.ai/gallery/expense-report): Collect dated expenses by category, then show the total in one PDF.
+- [Account statement](https://thirds.ai/gallery/account-statement): Send a customer a dated account statement with charges, payments, and balance due.
+- [Sales order confirmation](https://thirds.ai/gallery/sales-order-confirmation): Confirm a customer's order with the items, delivery date, and total they'll pay.
+- [Event programme](https://thirds.ai/gallery/event-programme): Give attendees a clear programme with the schedule, speakers, and where to go.
+- [Shift rota](https://thirds.ai/gallery/shift-rota): Share a weekly shift schedule with times, roles, and who covers each one.
+- [Project status report](https://thirds.ai/gallery/project-status-report): Send a weekly project update with status, key numbers, and what happens next.
+- [Incident report](https://thirds.ai/gallery/incident-report): Record a workplace incident with what happened, who reported it, and the next step.
+- [Agency case study](https://thirds.ai/gallery/agency-case-study): Show a client project's brief, approach, results, and a client quote in one page.
+- [Media kit](https://thirds.ai/gallery/media-kit): Introduce yourself to partners with your services, formats, and how to book you.
+- [Product catalogue](https://thirds.ai/gallery/product-catalogue): List your products with prices and ordering details in one easy catalogue.
+- [Restaurant menu](https://thirds.ai/gallery/restaurant-menu): Print a menu with your dishes, prices, and allergen note for one service.
+- [Event name badge](https://thirds.ai/gallery/event-name-badge): Print a name badge with a photo, role, and clear access label for each guest.
+- [Appointment card](https://thirds.ai/gallery/appointment-card): Confirm a booking with the customer, service, time, and place in one clear card.
+- [Loyalty card](https://thirds.ai/gallery/loyalty-card): Show a member how close they are to their next reward on one card.
+- [Course lesson cover](https://thirds.ai/gallery/course-lesson-cover): Open a course lesson with its number, title, teacher, and time in one bold image.
+- [Release notes](https://thirds.ai/gallery/release-notes): Tell your team what changed with a clear list of updates and one action.
+- [Changelog card](https://thirds.ai/gallery/changelog-card): Turn a product update into one shareable card with the headline and each change.
+- [Invoice reminder](https://thirds.ai/gallery/invoice-reminder): Send a polite reminder with the amount due, the deadline, and how to pay.
+- [Store hours poster](https://thirds.ai/gallery/store-hours-poster): Post your weekly hours with today's times, address, and contact in one poster.
+- [Referral card](https://thirds.ai/gallery/referral-card): Give a customer a referral offer with a code, steps, and a deadline to use it.
+- [Onboarding checklist](https://thirds.ai/gallery/onboarding-checklist): Give a new hire a clear first week with tasks, owners, and due dates.
+- [Creative brief](https://thirds.ai/gallery/creative-brief): Set one campaign's idea, audience, and deliverables before the work begins.
+- [Weekly planner](https://thirds.ai/gallery/weekly-planner): Plan your working week with three priorities, a daily rhythm, and notes.
+- [Travel itinerary](https://thirds.ai/gallery/travel-itinerary): Keep a trip's route, stays, and emergency contact on one printed page.
+- [Donation receipt](https://thirds.ai/gallery/donation-receipt): Thank a donor with a clear receipt for their gift and its tax note.
+- [Sponsorship proposal](https://thirds.ai/gallery/sponsorship-proposal): Show a sponsor the opportunity, the levels, and the next step to say yes.
+- [Press release](https://thirds.ai/gallery/press-release): Announce news with a headline, the story, key facts, and a press contact.
+- [Training handout](https://thirds.ai/gallery/training-handout): Teach one method with steps, key terms, and something to try right away.
+- [Feedback summary](https://thirds.ai/gallery/feedback-summary): Turn customer conversations into one clear report with themes and next steps.
+- [Inventory count sheet](https://thirds.ai/gallery/inventory-count-sheet): Record a stock count with expected numbers, actual counts, and any gaps.
+- [Catering order](https://thirds.ai/gallery/catering-order): Confirm a catering order with the guest count, menu, and total cost.
+- [Speaker card](https://thirds.ai/gallery/speaker-card): Promote a speaker with their talk, photo, and a clear way to reserve a seat.
+- [Podcast quote](https://thirds.ai/gallery/podcast-quote): Turn one great line from an episode into a shareable square quote card.
+- [Course promotion](https://thirds.ai/gallery/course-promo): Promote a course with its promise, lesson count, length, and the teacher.
+- [Book launch banner](https://thirds.ai/gallery/book-launch): Announce a new book with the cover, the blurb, and how to start reading.
+- [Restaurant special](https://thirds.ai/gallery/restaurant-special): Feature one dish with its price, timing, and a way to book a table.
+- [Membership card](https://thirds.ai/gallery/membership-card): Issue a membership card with the member's name, tier, and benefits.
+- [Sale story](https://thirds.ai/gallery/sale-story): Share a limited-time sale with the offer, deadline, and a code to use.
+- [Community invite](https://thirds.ai/gallery/community-invite): Invite people to a regular gathering with the topic, date, and how to join.
+- [Hiring story](https://thirds.ai/gallery/hiring-story): Announce an open role with the job title, key facts, and closing date.
+- [Feature announcement](https://thirds.ai/gallery/feature-announcement): Launch a new feature with the version, the result for customers, and one action.
+- [Thank-you card](https://thirds.ai/gallery/thank-you-card): Send a warm thank-you with a personal message and who it's from.
+- [Brand guidelines](https://thirds.ai/gallery/brand-guidelines): Keep your brand's colours, voice, and rules together in one small guide.
+- [Portfolio cover](https://thirds.ai/gallery/portfolio-cover): Open a portfolio with your studio's story, selected projects, and contact details.
+- [Client welcome pack](https://thirds.ai/gallery/client-welcome-pack): Welcome a new client with the project, the plan, and their first step.
+- [Workshop worksheet](https://thirds.ai/gallery/workshop-worksheet): Give each participant a focused worksheet with prompts, notes, and one next step.
+- [Project handover](https://thirds.ai/gallery/project-handover): Record what a project delivered, what's left, and who owns it next.
+- [Sales one-pager](https://thirds.ai/gallery/sales-one-pager): Explain an offer with its promise, benefits, price, and the next step.
+- [Product spec sheet](https://thirds.ai/gallery/product-spec-sheet): Give buyers a compact spec sheet with version, features, and specifications.
+- [Maintenance log](https://thirds.ai/gallery/maintenance-log): Track one asset's service dates, checks, and who owns the next visit.
+- [Reading list](https://thirds.ai/gallery/reading-list): Curate a reading list with a reason to read each pick and where to start.
+- [Fundraising poster](https://thirds.ai/gallery/fundraising-poster): Ask for donations with a clear target, amount raised, and a deadline.
+- [Shipping label](https://thirds.ai/gallery/shipping-label): Print a parcel label for your shop with the address and order details.
+- [Name badge](https://thirds.ai/gallery/name-badge): Print an event badge for your guests with a large name and role.
+- [LinkedIn profile banner](https://thirds.ai/gallery/linkedin-banner): Fill a LinkedIn banner for your brand with a headline and next step.
+- [Pinterest guide pin](https://thirds.ai/gallery/pinterest-pin): Make a tall guide pin for readers with a headline and three tips.
+- [Podcast cover](https://thirds.ai/gallery/podcast-cover): Make a square podcast cover for listeners with the show name and episode.
+- [Launch checklist](https://thirds.ai/gallery/launch-checklist): Build five branded slides for a launch week from one design.
+- [Lookbook cover](https://thirds.ai/gallery/atelier-cover): Sell one seasonal product to shoppers with a portrait and a big price.
+- [Prix-fixe menu](https://thirds.ai/gallery/northline-brief): Post tonight's set menu for diners with a giant price and booking link.
+- [Guest chef poster](https://thirds.ai/gallery/east-campaign): Announce a guest chef residency to diners with a portrait and dates.
+- [Talk poster](https://thirds.ai/gallery/signal-keynote): Promote a conference talk to attendees with the title, speaker, and schedule.
+- [Portrait sitting](https://thirds.ai/gallery/amber-studio): Sell a timed portrait sitting to clients with a price and booking date.
+- [Magazine feature](https://thirds.ai/gallery/guest-feature): Share a magazine cover story with readers using a full-bleed portrait.
+- [Product plate](https://thirds.ai/gallery/lookbook-plate): Post one look to shoppers with its product name and price.
+- [Street ad](https://thirds.ai/gallery/city-billboard): Run a wide outdoor ad for shoppers with a huge product line.
+- [Magazine cover](https://thirds.ai/gallery/folio-cover): Set a round portrait on a magazine cover for a new issue.
+- [Sale poster](https://thirds.ai/gallery/type-specimen): Announce a weekend sale to shoppers with a giant percent off.
+- [Studio invoice](https://thirds.ai/gallery/press-kit): Send a client invoice with the amount due and due date.
+- [Article card](https://thirds.ai/gallery/share-card): Make a link preview for readers with an article headline and portrait.
+- [Knitwear drop story](https://thirds.ai/gallery/drop-story): Announce a fashion drop to followers with a full-bleed photo and sticker.
+- [Skincare serum launch](https://thirds.ai/gallery/glow-launch): Launch a skincare product to followers with a portrait and its price.
+- [Creator video thumbnail](https://thirds.ai/gallery/creator-thumb): Make a video thumbnail for viewers with two big title lines.
+- [Business coach banner](https://thirds.ai/gallery/coach-banner): Fill a LinkedIn banner for a coach with a headline and three stats.
+- [Festival day pass](https://thirds.ai/gallery/festival-pass): Print a tear-off festival pass for guests with a scannable code.
+- [Bistro evening menu](https://thirds.ai/gallery/bistro-menu): Print an evening menu for diners with your dishes and prices.
+- [Design studio invoice](https://thirds.ai/gallery/editorial-invoice): Send a client an invoice with an oversized total and line items.
+- [Weekend sale sticker](https://thirds.ai/gallery/sale-sticker): Post a sale sticker to shoppers with a big discount and code.
+- [Live music gig poster](https://thirds.ai/gallery/gig-poster): Announce a live music night to fans with the artist's name.
+- [Coffee bag label](https://thirds.ai/gallery/coffee-label): Print a coffee bag label for buyers with its origin and notes.
+- [Mixtape cover](https://thirds.ai/gallery/mixtape-cover): Make a playlist cover for listeners with a big volume number.
+- [Course completion certificate](https://thirds.ai/gallery/workshop-certificate): Award a learner a course certificate with a large name and seal.
+- [Monthly KPI report](https://thirds.ai/gallery/kpi-report): Send a client a monthly report with one big number and stats.
+- [Article share card](https://thirds.ai/gallery/article-share-card): Make a link preview for readers when you publish a blog post.
+- [Studio business card](https://thirds.ai/gallery/studio-business-card): Print a business card for your team with a large name and role.
+- [Shop business card](https://thirds.ai/gallery/harbour-business-card): Print a shop business card for staff with a bold colour panel.
+- [Cafe business card](https://thirds.ai/gallery/ember-business-card): Print a warm cafe business card for staff with a large name.
+- [Press business card](https://thirds.ai/gallery/marlow-business-card): Print a quiet business card for an editor or adviser.
+- [Outdoor business card](https://thirds.ai/gallery/kestrel-business-card): Print a bold business card for guides and sellers at an outdoor brand.
+- [Retainer invoice](https://thirds.ai/gallery/retainers-invoice): Bill a client a monthly retainer with a large amount due.
+- [Trade invoice](https://thirds.ai/gallery/trade-invoice): Bill trade or workshop work to a client with a stamped invoice.
+- [Hospitality invoice](https://thirds.ai/gallery/hospitality-invoice): Bill catering or cafe work to a client with a warm invoice.
+- [Studio quote](https://thirds.ai/gallery/studio-quote): Price a studio project for a client before work starts.
+- [Trade quote](https://thirds.ai/gallery/trade-quote): Price a trade or building job for a client before work starts.
+- [Event quote](https://thirds.ai/gallery/event-quote): Price event production for a client with a large total at the foot.
+- [Retainer quote](https://thirds.ai/gallery/retainers-quote): Price an ongoing service for a client with a quiet editorial layout.
+- [Studio receipt](https://thirds.ai/gallery/studio-receipt): Mark a client's studio payment as paid with a stamp.
+- [Cafe receipt](https://thirds.ai/gallery/cafe-receipt): Mark a customer's cafe payment as paid with a ticket look.
+- [Workshop receipt](https://thirds.ai/gallery/workshop-receipt): Mark a learner's class fee as paid with a teal band.
+- [Studio certificate](https://thirds.ai/gallery/studio-certificate): Give a learner a landscape certificate with gold rules.
+- [YouTube channel banner](https://thirds.ai/gallery/youtube-banner): Fill a YouTube banner with your channel name, tagline, and photo.
+- [YouTube profile picture](https://thirds.ai/gallery/youtube-profile-picture): Make a round channel picture with your photo and name.
+- [X profile header](https://thirds.ai/gallery/x-header): Fill an X header with a big headline, a short line, and your link.
+- [X profile picture](https://thirds.ai/gallery/x-profile-picture): Make a round logo picture from your initial and colours.
+- [Facebook page cover](https://thirds.ai/gallery/facebook-cover): Fill a Facebook cover with a headline, your hours, and a photo.
+
+## Free tools
+
+- [Free online tools for pictures and PDFs](https://thirds.ai/tools): Resize, compress, or convert a picture in your browser with no account. Or fill an invoice, quote, receipt, certificate, or business card and download a PDF.
+- [Social image resizer](https://thirds.ai/tools/social-image-resizer): Change a PNG, JPEG, or WebP to a new size for Instagram, Facebook, and other posts. It's free, and you don't need an account.
+- [SVG to PNG](https://thirds.ai/tools/svg-to-png): Turn a still SVG into a PNG at the size you need. You can also download JPEG or WebP on the same page. It's free, and you don't need an account.
+- [Image compressor](https://thirds.ai/tools/image-compressor): Make a PNG, JPEG, or WebP smaller without changing its width or height. It's free, and you don't need an account.
+- [Business card generator](https://thirds.ai/tools/business-card-generator): Make a UK business card PDF online. Pick a design, type your name and contact lines, and download it. A free account gives you 50 credits a month.
+- [Certificate generator](https://thirds.ai/tools/certificate-generator): Make a course certificate PDF online. Type the name, course, and date, pick a design, and download it. A free account gives you 50 credits a month.
+- [Invoice generator](https://thirds.ai/tools/invoice-generator): Make an invoice PDF online. Pick a design, type the client and the line items, and download it. A free account gives you 50 credits a month.
+- [Quote generator](https://thirds.ai/tools/quote-generator): Make a quote PDF online. Pick a design, type the client and the prices, and download it. A free account gives you 50 credits a month.
+- [Receipt generator](https://thirds.ai/tools/receipt-generator): Make a receipt PDF online. Pick a design, type the payment, and download it. A free account gives you 50 credits a month.
+
+## Contact
+
+- [Support](mailto:support@thirds.ai): Help with your account or integration.

@@ -1,0 +1,88 @@
+generated: '2026-09-18'
+method: derived
+source: openapi/thirds-ai-openapi.yml $ref links and id-reference fields (brand_kit_id, template_id, version,
+  build_id, message_id, webhook_id, id-prefixes)
+id_prefixes:
+  brand_kit: bk_
+  brand_asset: ba_
+  template: tpl_
+  template_build: tb_
+  template_message: tm_
+  webhook: wh_
+  api_key: key_ (secret thirds_sk_v1_)
+  image_asset: img_
+  render_job: pdf_/img_ job ids
+entities:
+- BrandKit
+- BrandAsset
+- Template
+- TemplateVersion
+- TemplateBuild
+- TemplateMessage
+- PdfJob
+- ImageJob
+- ImagePack
+- Carousel
+- Batch
+- BatchRow
+- ImageAsset
+- Webhook
+- WebhookDelivery
+- ApiKey
+relationships:
+- from: BrandKit
+  type: has_many
+  to: BrandAsset
+  via: brand_kit_id
+- from: Template
+  type: has_many
+  to: TemplateVersion
+  via: template_id
+- from: Template
+  type: belongs_to
+  to: BrandKit
+  via: brand_kit binding (optional)
+- from: TemplateBuild
+  type: has_many
+  to: TemplateMessage
+  via: build_id
+- from: TemplateBuild
+  type: produces
+  to: Template
+  via: publishTemplateBuild
+- from: PdfJob
+  type: belongs_to
+  to: TemplateVersion
+  via: template_id + version (optional; else raw HTML)
+- from: ImageJob
+  type: belongs_to
+  to: TemplateVersion
+  via: template_id + version (optional; else raw HTML)
+- from: Batch
+  type: has_many
+  to: BatchRow
+  via: batch id
+- from: Batch
+  type: belongs_to
+  to: TemplateVersion
+  via: template_id + version
+- from: ImagePack
+  type: belongs_to
+  to: TemplateVersion
+  via: template_id + version
+- from: Carousel
+  type: belongs_to
+  to: TemplateVersion
+  via: template_id + version
+- from: Webhook
+  type: has_many
+  to: WebhookDelivery
+  via: webhook_id
+- from: PdfJob
+  type: belongs_to
+  to: BrandKit
+  via: brand_kit (optional)
+- from: ImageJob
+  type: belongs_to
+  to: BrandKit
+  via: brand_kit (optional)

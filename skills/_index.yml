@@ -1,0 +1,16 @@
+generated: '2026-09-18'
+method: generated
+source: openapi/thirds-ai-openapi.yml operations + https://thirds.ai/docs recipes
+note: >-
+  No provider-published skills/AGENTS.md was found; these are generated from real operationIds and the
+  documented conventions (Idempotency-Key on create, 202+poll, signed 15-minute download links).
+api: thirds.ai REST API
+skills:
+  - file: thirds-ai-html-to-pdf.md
+    operations: [createPdf, getPdf, getDownload]
+  - file: thirds-ai-template-with-data.md
+    operations: [listTemplates, getTemplate, createPdf, createImage, getPdf, getImage]
+  - file: thirds-ai-ai-template-build.md
+    operations: [createTemplateBuild, editTemplateBuild, getTemplateBuild, getTemplateBuildDraft, publishTemplateBuild]
+  - file: thirds-ai-csv-batch.md
+    operations: [createBatch, getBatch, retryBatch, getBatchArchive]

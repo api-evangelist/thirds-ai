@@ -1,13 +1,30 @@
 name: thirds.ai
-description: >-
-  Turn one design into content at scale. thirds.ai makes editable templates from a text prompt, HTML, a picture, or
-  gallery and renders PDFs and images via a web app, REST API, or hosted MCP server. Outputs are PDF, PNG, JPEG, and
-  WebP.
+description: Turn one design into content at scale. thirds.ai makes editable templates from a text prompt, HTML,
+  a picture, or gallery and renders PDFs and images via a web app, REST API, or hosted MCP server. Outputs are PDF,
+  PNG, JPEG, and WebP.
 url: https://raw.githubusercontent.com/api-evangelist/thirds-ai/refs/heads/main/apis.yml
 created: '2026-09-18'
 modified: '2026-09-18'
 specificationVersion: '0.21'
 tags:
+- pdf-automation
+- image-automation
+- document-generation
+- html-to-pdf
+- html-to-image
+- template-rendering
+- branded-content
+- developer-tools
+- mcp-server
+- agent-native
+- marketing-ops
+apis:
+- name: thirds.ai REST API
+  description: REST API for HTML-to-PDF, HTML-to-image, AI template generation, template editing, brand kits, rendering,
+    and batch operations. Bearer API key auth with idempotency support.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
   - pdf-automation
   - image-automation
   - document-generation
@@ -19,63 +36,110 @@ tags:
   - mcp-server
   - agent-native
   - marketing-ops
-apis:
-  - name: thirds.ai REST API
-    description: >-
-      REST API for HTML-to-PDF, HTML-to-image, AI template generation, template editing, brand kits, rendering, and
-      batch operations. Bearer API key auth with idempotency support.
-    humanURL: https://thirds.ai/docs/api-reference
-    baseURL: https://thirds.ai/v1
-    tags:
-      - pdf-automation
-      - image-automation
-      - document-generation
-      - html-to-pdf
-      - html-to-image
-      - template-rendering
-      - branded-content
-      - developer-tools
-      - mcp-server
-      - agent-native
-      - marketing-ops
-    properties:
-      - type: OpenAPI
-        url: https://thirds.ai/v1/openapi.json
-      - type: Documentation
-        url: https://thirds.ai/docs
-      - type: LLMsTxt
-        url: https://thirds.ai/llms.txt
-  - name: thirds.ai MCP Server
-    description: >-
-      Hosted MCP server exposing thirds.ai tools (create_brand_kit, create_template, edit_template, publish_template,
-      render, create_batch, get_status, and more) over Streamable HTTP with bearer-token auth. Uses your existing
-      account, credits, and templates.
-    humanURL: https://thirds.ai/docs/mcp
-    baseURL: https://thirds.ai/mcp
-    tags:
-      - pdf-automation
-      - image-automation
-      - document-generation
-      - html-to-pdf
-      - html-to-image
-      - template-rendering
-      - branded-content
-      - developer-tools
-      - mcp-server
-      - agent-native
-      - marketing-ops
-    properties:
-      - type: MCPServer
-        url: https://thirds.ai/mcp
-      - type: Documentation
-        url: https://thirds.ai/docs/mcp
-      - type: LLMsTxt
-        url: https://thirds.ai/llms.txt
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-openapi.yml
+  - type: OpenAPI
+    url: https://thirds.ai/v1/openapi.json
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: Overlay
+    url: overlays/thirds-ai-openapi-overlay.yaml
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- name: thirds.ai MCP Server
+  description: Hosted MCP server exposing thirds.ai tools (create_brand_kit, create_template, edit_template, publish_template,
+    render, create_batch, get_status, and more) over Streamable HTTP with bearer-token auth. Uses your existing
+    account, credits, and templates.
+  humanURL: https://thirds.ai/docs/mcp
+  baseURL: https://thirds.ai/mcp
+  tags:
+  - pdf-automation
+  - image-automation
+  - document-generation
+  - html-to-pdf
+  - html-to-image
+  - template-rendering
+  - branded-content
+  - developer-tools
+  - mcp-server
+  - agent-native
+  - marketing-ops
+  properties:
+  - type: MCPServer
+    url: mcp/thirds-ai-mcp.yml
+  - type: MCPServer
+    url: https://thirds.ai/mcp
+  - type: Documentation
+    url: https://thirds.ai/docs/mcp
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: ToolCrosswalk
+    url: mcp/thirds-ai-tool-crosswalk.yml
 maintainers:
-  - FN: thirds.ai
-    url: https://thirds.ai
+- FN: thirds.ai
+  url: https://thirds.ai
+  email: support@thirds.ai
 generated:
   by: apis.io/add
   model: claude-opus-4-8
   confidence: 96
   at: '2026-09-18T09:14:04.214Z'
+common:
+- type: DomainSecurity
+  url: security/thirds-ai-domain-security.yml
+- type: Authentication
+  url: authentication/thirds-ai-authentication.yml
+- type: Website
+  url: https://thirds.ai
+- type: Documentation
+  url: https://thirds.ai/docs
+- type: Pricing
+  url: https://thirds.ai/pricing
+- type: Support
+  url: https://thirds.ai/support
+- type: Blog
+  url: https://thirds.ai/blog
+- type: TermsOfService
+  url: https://thirds.ai/terms
+- type: PrivacyPolicy
+  url: https://thirds.ai/privacy
+- type: ChangeLog
+  url: https://thirds.ai/changelog
+- type: LLMsTxt
+  url: llms/thirds-ai-llms.txt
+- type: Conventions
+  url: conventions/thirds-ai-conventions.yml
+- type: Idempotency
+  url: conventions/thirds-ai-conventions.yml
+- type: Conformance
+  url: conformance/thirds-ai-conformance.yml
+- type: Lifecycle
+  url: lifecycle/thirds-ai-lifecycle.yml
+- type: Plans
+  url: plans/thirds-ai-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/thirds-ai-rate-limits.yml
+- type: Sandbox
+  url: sandbox/thirds-ai-sandbox.yml
+- type: ErrorCatalog
+  url: errors/thirds-ai-problem-types.yml
+- type: DataModel
+  url: data-model/thirds-ai-data-model.yml
+- type: Webhooks
+  url: asyncapi/thirds-ai-webhooks.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: VulnerabilityDisclosure
+  url: security/thirds-ai-vulnerability-disclosure.yml
+- type: Security
+  url: security/thirds-ai-vulnerability-disclosure.yml
+x-enrichment:
+  date: '2026-09-18'
+  status: enriched
+  artifacts_added: 22
+  pass: local-v3

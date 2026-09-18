@@ -1,0 +1,43 @@
+generated: '2026-09-18'
+method: searched
+source: https://thirds.ai/docs/rate-limits
+limits:
+- scope: per-api-key
+  dimension: submission rate
+  limit: 5 requests/second
+  burst: idle burst of 21
+- scope: per-api-key
+  dimension: live jobs (queued or running)
+  limit: 8
+- scope: per-account
+  dimension: live jobs (queued or running)
+  limit: 16
+  note: PDF and image work share account capacity
+- scope: service
+  dimension: paid queued-job backlog
+  limit: 500
+- scope: per-browser
+  dimension: anonymous playground renders
+  limit: 200 per month
+response_headers:
+- Retry-After
+no_headers:
+- X-RateLimit-*
+exhaustion:
+- status: 429
+  code: rate_limited
+  retry: 1-60s via Retry-After
+- status: 429
+  code: account_concurrency_limited
+  retry: ~5s
+- status: 429
+  code: key_concurrency_limited
+  retry: ~5s
+- status: 429
+  code: abuse_limited
+  retry: ~3600s
+- status: 503
+  code: overloaded
+  retry: ~30s
+note: No remaining-request counter or X-RateLimit-* headers. Clients read Retry-After (seconds) and error.retry.retry_after_seconds.
+  Accepted async jobs return 202 with a Location header (poll after ~1s).

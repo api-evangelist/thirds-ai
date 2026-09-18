@@ -1,0 +1,46 @@
+generated: '2026-09-18'
+method: searched
+source: https://thirds.ai/pricing + https://thirds.ai/llms.txt
+currency: USD
+credit_model:
+  unit: credit
+  render_cost: 1 credit per finished PDF or image; a failed render costs nothing
+  ai_cost: AI template build or image import 50 credits; later text/HTML message 25; later new-picture
+    message 50. Free credits do not pay for AI work.
+  free_actions: Copying a gallery template, hand edits, and live preview are free
+  extra_credit_price: 0.015
+plan_count: 4
+plans:
+- name: Free
+  price: 0
+  period: month
+  credits: 50
+  note: Verified account, no card. Free credits do not pay for AI work.
+- name: Starter
+  price: 29
+  period: month
+  credits: 2500
+  trial: 7-day trial for $1 with 500 trial credits
+  overage: $0.015 per extra credit
+- name: Growth
+  price: 79
+  period: month
+  credits: 10000
+  overage: $0.015 per extra credit
+- name: Scale
+  price: 199
+  period: month
+  credits: 40000
+  overage: $0.015 per extra credit
+credit_packs:
+- price: 10
+  credits: 500
+  expires: 12 months
+- price: 25
+  credits: 1500
+  expires: 12 months
+- price: 100
+  credits: 7500
+  expires: 12 months
+note: Annual savings available on paid plans. Enterprise/contact-us tier not advertised; self-serve pricing
+  is fully published.

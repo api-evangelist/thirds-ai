@@ -1,0 +1,23 @@
+generated: '2026-09-18'
+method: searched
+source: https://thirds.ai/changelog, /docs/api-reference, /security, /support
+versioning:
+  scheme: URI path /v1
+  current: v1
+  openapi_version: 1.0.0
+  policy: Single stable v1 surface; no dated version history published yet.
+deprecation:
+  policy: null
+  headers: []
+  deprecated_operations: []
+  note: No deprecation policy, Sunset/Deprecation headers, or deprecated operations documented or present
+    in the OpenAPI.
+status_page:
+  url: null
+  note: No dedicated status page found; /support references status but no standalone status host was located.
+sla:
+  note: No published SLA; queue backlog and concurrency limits are documented under /docs/rate-limits.
+changelog:
+  url: https://thirds.ai/changelog
+  state: published-but-empty
+  note: Changelog page exists but reads 'No updates yet' (last updated 11 September 2026).

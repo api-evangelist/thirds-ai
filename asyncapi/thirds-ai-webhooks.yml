@@ -1,0 +1,30 @@
+generated: '2026-09-18'
+method: derived
+source: openapi/thirds-ai-openapi.yml (/v1/webhooks* endpoints and WebhookFields schema)
+note: thirds.ai ships a signed webhook surface (no separate AsyncAPI document is published, so this is
+  captured as a Webhooks catalog, not AsyncAPI).
+transport: HTTPS POST to a caller-registered URL, HMAC-signed with a per-destination secret
+delivery:
+  signing: per-destination signing secret (rotatable via rotateWebhookSecret)
+  max_events_per_destination: 3
+  test: POST /v1/webhooks/{webhook_id}/test sends a signed sample render.succeeded event (no credits,
+    no render)
+  recovery: replayWebhook resends an unfinished attempt; listWebhookDeliveries audits attempts
+events:
+- name: render.succeeded
+  description: A render finished successfully; the finished file is available via its signed link.
+- name: render.failed
+  description: A render failed; no credit is charged.
+- name: render.cancelled
+  description: A render was cancelled before completion.
+management_operations:
+- createWebhook
+- listWebhooks
+- getWebhook
+- deleteWebhook
+- rotateWebhookSecret
+- disableWebhook
+- enableWebhook
+- replayWebhook
+- testWebhook
+- listWebhookDeliveries
