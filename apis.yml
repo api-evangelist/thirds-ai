@@ -9,6 +9,18 @@ specificationVersion: '0.21'
 tags:
 - pdf-automation
 - image-automation
+- Document Generation
+- HTML to PDF
+- HTML to Image
+- template-rendering
+- Branded Content
+- Developer Tools
+- MCP Server
+- agent-native
+- marketing-ops
+tags_raw:
+- pdf-automation
+- image-automation
 - document-generation
 - html-to-pdf
 - html-to-image
@@ -25,6 +37,18 @@ apis:
   humanURL: https://thirds.ai/docs/api-reference
   baseURL: https://thirds.ai/v1
   tags:
+  - pdf-automation
+  - image-automation
+  - Document Generation
+  - HTML to PDF
+  - HTML to Image
+  - template-rendering
+  - Branded Content
+  - Developer Tools
+  - MCP Server
+  - agent-native
+  - marketing-ops
+  tags_raw:
   - pdf-automation
   - image-automation
   - document-generation
@@ -58,6 +82,18 @@ apis:
   humanURL: https://thirds.ai/docs/mcp
   baseURL: https://thirds.ai/mcp
   tags:
+  - pdf-automation
+  - image-automation
+  - Document Generation
+  - HTML to PDF
+  - HTML to Image
+  - template-rendering
+  - Branded Content
+  - Developer Tools
+  - MCP Server
+  - agent-native
+  - marketing-ops
+  tags_raw:
   - pdf-automation
   - image-automation
   - document-generation
