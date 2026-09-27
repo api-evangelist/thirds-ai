@@ -1,0 +1,1191 @@
+openapi: 3.2.0
+info:
+  title: Thirds Ai PDF API
+  version: 1.0.0
+  description: 'Operations tagged Pdf across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://thirds.ai
+tags:
+- name: PDF
+paths:
+  /v1/pdf:
+    post:
+      summary: Create a PDF
+      description: Render one PDF from raw HTML, an inline stateless template, or one owned saved-template version. An omitted saved version resolves to one exact immutable version before data validation, admission, idempotency, queueing, or billing. Template evaluation happens before storage and only evaluated HTML enters render input. Returns 200 for a terminal job or 202 while the accepted job remains queued or running. A terminal job can be succeeded, failed, or cancelled; check status before downloading. Send wait=false to skip the bounded wait. Every mode uses the same queue, renderer, retention, webhook, and fixed one-credit success price.
+      operationId: createPdf
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        description: 1 to 255 printable ASCII characters. A repeated key with the same logical request replays one job; a different logical request conflicts. Stateless fingerprints include original source, sorted data, and effective render options. Saved-template fingerprints include the exact resolved template version, sorted data, and effective options. wait, request IDs, and transport choices do not affect the fingerprint.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: ^[ -~]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PdfRequest'
+            examples:
+              raw_html:
+                summary: Raw HTML
+                value:
+                  html: <h1>Quarterly report</h1><p>Ready to share.</p>
+              stateless_template:
+                summary: Stateless template with one data object
+                value:
+                  html: '<h1>{{ report.title }}</h1><p>Total: {{ report.total | currency }}</p>'
+                  data:
+                    report:
+                      title: Quarterly report
+                      total: 125000
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '200':
+          description: The job is terminal. Check status for succeeded, failed, or cancelled; HTTP 200 does not mean the render succeeded.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            Idempotency-Replayed:
+              description: '"true" when this answer replays a job an earlier request with the same idempotency key already created.'
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfJob'
+        '202':
+          description: The job was accepted and is still queued or running. Poll GET /v1/pdf/{id} for the terminal result.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            Idempotency-Replayed:
+              description: '"true" when this answer replays a job an earlier request with the same idempotency key already created.'
+              schema:
+                type: string
+            Location:
+              description: The job's own status URL, /v1/pdf/{id} — where to poll for the terminal result.
+              schema:
+                type: string
+            Retry-After:
+              description: How soon polling the status URL is worthwhile, in seconds.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfJob'
+        '400':
+          description: The request failed validation, saved-template data did not match its schema, bounded template evaluation failed, or the Idempotency-Key header was the wrong shape.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '402':
+          description: The account does not hold the one credit required for this render. The code is insufficient_credits. The reservation settles at one credit on success and is fully released on failure.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: This idempotency key was already used for a different logical request, or the selected saved-template version changed before admission completed.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '413':
+          description: The request is larger than this build accepts.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '415':
+          description: The request did not carry a JSON content type.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          description: A direct fleet-protection limit was hit. The code is rate_limited, account_concurrency_limited, or key_concurrency_limited. Each key sustains five requests per second with an idle burst of twenty-one.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            Retry-After:
+              description: Seconds to wait before retrying.
+              schema:
+                type: integer
+                minimum: 1
+                maximum: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '503':
+          description: The service is at capacity.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            Retry-After:
+              description: Seconds to wait before retrying.
+              schema:
+                type: integer
+                minimum: 1
+                maximum: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - PDF
+    get:
+      summary: List render history
+      description: 'List the authenticated account''s render jobs, newest first. Failed or cancelled jobs removed through DELETE do not appear. Bounded by keyset: pass the previous page''s next_cursor to continue, rather than an offset, so a page already read stays stable while new jobs are created.'
+      operationId: listPdfHistory
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: q
+        in: query
+        description: Case-insensitive search of references, template names, and file types.
+        schema:
+          type: string
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]*$
+      - name: limit
+        in: query
+        required: false
+        description: 1 to 100. Defaults to 20. A value outside this range is clamped rather than refused.
+        schema:
+          type: integer
+          default: 20
+      - name: cursor
+        in: query
+        required: false
+        description: An opaque value from an earlier page's next_cursor. A cursor that cannot be read is refused with 400.
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '200':
+          description: One page of the account's render history.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfHistoryPage'
+        '400':
+          description: The limit parameter was not a whole number, the cursor could not be read, or the query held an unknown parameter.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - PDF
+    servers:
+    - url: https://thirds.ai
+  /v1/pdf/{id}:
+    get:
+      summary: Get a PDF's status
+      description: Return one render job's current status, in the same representation POST /v1/pdf answers with. Mints a fresh signed download link on every call while the PDF is still available.
+      operationId: getPdf
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The job's public identifier, such as "pdf_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^pdf_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '200':
+          description: The job's current status.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfJob'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No job with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, or that is not well formed, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - PDF
+    delete:
+      summary: Delete a PDF file or an unsuccessful render
+      description: Remove a successful job's PDF from storage, or remove a failed or cancelled job from history. The job stays readable by ID, and billing, abuse limits, and idempotency keys stay unchanged. The file is removed before its database marker; a file-removal failure returns 500 and leaves the record live for a safe retry. Repeated requests are safe. At or after the fixed retention cutoff, the removal reason remains expired.
+      operationId: deletePdf
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The job's public identifier, such as "pdf_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^pdf_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '200':
+          description: The job's current status after file or history removal.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfJob'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No job with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, or that is not well formed, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: The job is queued or running, so it cannot be deleted.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - PDF
+    servers:
+    - url: https://thirds.ai
+components:
+  responses:
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    PdfRequest:
+      description: 'Exactly one supported PDF input mode: raw HTML, an inline stateless template, or one saved-template version. Image request shapes are not part of this endpoint.'
+      oneOf:
+      - $ref: '#/components/schemas/RawPdfRequest'
+      - $ref: '#/components/schemas/StatelessTemplatePdfRequest'
+      - $ref: '#/components/schemas/SavedTemplatePdfRequest'
+    RawPdfRequest:
+      description: A raw HTML render. The HTML enters the existing render workflow unchanged.
+      allOf:
+      - $ref: '#/components/schemas/PdfRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 5242880
+            description: The raw HTML document to render. Up to 5,242,880 bytes.
+        required:
+        - html
+      unevaluatedProperties: false
+    SavedTemplatePdfRequest:
+      description: Render one exact owned saved-template version. Omit version to resolve the latest version once before validation and admission. Data must be exactly one JSON object.
+      allOf:
+      - $ref: '#/components/schemas/PdfRequestCommon'
+      - type: object
+        properties:
+          template_id:
+            $ref: '#/components/schemas/TemplateId'
+          version:
+            type: integer
+            minimum: 1
+            description: An exact immutable version. Omit to select latest once.
+          data:
+            type: object
+            description: The JSON-compatible data object validated against the selected version's optional schema before evaluation or admission.
+        required:
+        - template_id
+        - data
+      unevaluatedProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    PdfHistoryPage:
+      type: object
+      description: One bounded page of an account's render history, newest first.
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PdfHistoryItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+          description: Pass as the cursor query parameter to read the next page. Null on the last page.
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    PdfHistoryItem:
+      type: object
+      description: One job in a bounded account history — the subset of PdfJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^pdf_[0-9a-f]{32}$
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          properties:
+            media_type:
+              const: application/pdf
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    PdfRequestCommon:
+      type: object
+      description: Render options shared by raw HTML, stateless-template, and saved-template requests. Every field is optional; an absent field takes the renderer's own default.
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: ^(?!.* $)(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9 ._-]*$
+          description: Download name. Surrounding spaces are refused. The server uses the real output extension. Omit it for a safe template-name and UTC creation-date name, or html-render and date for HTML.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        brand_kit_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^kit_[a-f0-9]{32}$
+          description: Select an owned active brand kit. This uses template evaluation and its 1 MiB source and data limits even when data is omitted. Overrides the source thirds-brand-kit meta default. Supplies reserved brand.name, brand.palette, brand.colours.primary/secondary/accent, brand.logo, brand.logos, and brand.fonts entries with family and src. data.brand is refused when a kit is selected. Only present palette roles and logos are supplied. Assets are captured before enqueue. Schemas validate customer data before brand is added.
+        pdf:
+          type: object
+          description: PDF layout options. The page defaults to A4 when neither "format" nor both "width" and "height" are given.
+          properties:
+            format:
+              type: string
+              enum:
+              - A0
+              - A1
+              - A2
+              - A3
+              - A4
+              - A5
+              - A6
+              - Letter
+              - Legal
+              - Ledger
+              - Tabloid
+              description: A named page size, such as "A4" or "Letter". Mutually exclusive with "width"/"height".
+            width:
+              type: string
+              pattern: ^(?:0\.(?=[0-9]{1,4}(?:px|in|cm|mm)$)(?=[0-9]*[1-9])[0-9]{1,4}|[1-9][0-9]*(?:\.[0-9]{1,4})?)(?:px|in|cm|mm)$
+              description: An explicit page width with its unit, such as "8.5in". Requires "height".
+            height:
+              type: string
+              pattern: ^(?:0\.(?=[0-9]{1,4}(?:px|in|cm|mm)$)(?=[0-9]*[1-9])[0-9]{1,4}|[1-9][0-9]*(?:\.[0-9]{1,4})?)(?:px|in|cm|mm)$
+              description: An explicit page height with its unit. Requires "width".
+            margins:
+              type: object
+              description: Each side defaults to "0mm".
+              properties:
+                top:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+                right:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+                bottom:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+                left:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+              additionalProperties: false
+            landscape:
+              type: boolean
+              description: Defaults to false.
+            print_background:
+              type: boolean
+              description: Defaults to true.
+            scale:
+              type: number
+              minimum: 0.1
+              maximum: 2.0
+              description: Defaults to 1.0.
+            display_header_footer:
+              type: boolean
+              description: Defaults to false.
+            header_template:
+              type: string
+              maxLength: 100000
+              description: Defaults to empty.
+            footer_template:
+              type: string
+              maxLength: 100000
+              description: Defaults to empty.
+            title:
+              type: string
+              maxLength: 256
+            author:
+              type: string
+              maxLength: 256
+            subject:
+              type: string
+              maxLength: 256
+            password:
+              type: string
+              minLength: 1
+              maxLength: 127
+              description: PDF open password, at most 127 UTF-8 bytes. AES-256 encryption.
+          oneOf:
+          - required:
+            - format
+            not:
+              anyOf:
+              - required:
+                - width
+              - required:
+                - height
+          - required:
+            - width
+            - height
+            not:
+              required:
+              - format
+          - not:
+              anyOf:
+              - required:
+                - format
+              - required:
+                - width
+              - required:
+                - height
+          additionalProperties: false
+        viewport:
+          type: object
+          properties:
+            width:
+              type: integer
+              minimum: 320
+              maximum: 7680
+              description: Defaults to 1280.
+            height:
+              type: integer
+              minimum: 200
+              maximum: 4320
+              description: Defaults to 720.
+            device_scale_factor:
+              type: number
+              minimum: 1.0
+              maximum: 3.0
+              description: Defaults to 1.0.
+          additionalProperties: false
+        javascript:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum:
+              - disabled
+              - enabled
+              description: Defaults to "disabled".
+          additionalProperties: false
+        wait:
+          type: boolean
+          description: Defaults to true. False answers as soon as the job is durable instead of holding the bounded wait; poll GET /v1/pdf/{id} for the terminal result. A delivery preference only — it is not part of the idempotency fingerprint and changes nothing about the render or its cost.
+        pages:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+            pattern: ^[A-Za-z][A-Za-z0-9_-]{0,63}$
+          minItems: 1
+          maxItems: 100
+          description: Canvas data-thirds-page ids in output order. Omitted keeps every page in document order. Duplicate or unknown ids are refused.
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    StatelessTemplatePdfRequest:
+      description: A bounded stateless template evaluation followed by the existing PDF render workflow. The request saves no reusable template. Data must be exactly one JSON object. Only evaluated HTML and the effective render options enter short-lived render input storage.
+      allOf:
+      - $ref: '#/components/schemas/PdfRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+            description: The inline Jinja-style template source. The evaluator accepts at most 1,048,576 bytes.
+          data:
+            type: object
+            description: The JSON-compatible data object available to the template. Arrays, scalars, and null are not accepted as the top-level value. Its canonical recursively key-sorted JSON representation may contain at most 1,048,576 bytes; JSON Schema cannot express that serialized-byte bound.
+        required:
+        - html
+        - data
+      unevaluatedProperties: false
+    PdfJob:
+      type: object
+      description: The state of one render job. This is the same shape whether the job just finished (200) or is still in progress (202).
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^pdf_[0-9a-f]{32}$
+          description: 'The job''s public identifier: "pdf_" followed by 32 lowercase hexadecimal characters.'
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          description: Present only for a succeeded job.
+          properties:
+            media_type:
+              const: application/pdf
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+              description: 64 lowercase hexadecimal characters.
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+              description: Null while the file is still available. "expired" once its retention window or an internal reconciliation has passed; "deleted" once the account removed it through DELETE /v1/pdf/{id}.
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          description: Present only for a terminal failure. Never carries a message, only a fixed code.
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+        download:
+          type:
+          - object
+          - 'null'
+          description: Present only while a succeeded job's PDF is still available. A fresh signed link every time this job is read.
+          properties:
+            url:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+          required:
+          - url
+          - expires_at
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      - download
+      additionalProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    ErrorEnvelope:
+      type: object
+      description: The one error shape every backend response uses.
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+              - account_suspended
+              - account_concurrency_limited
+              - abuse_limited
+              - ai_failure_limit_reached
+              - ai_needs_paid_credits
+              - already_subscribed
+              - auth_unavailable
+              - batch_row_limit
+              - billing_unavailable
+              - brand_asset_account_limit_reached
+              - brand_asset_invalid
+              - brand_asset_kind_invalid
+              - brand_asset_kind_mismatch
+              - brand_asset_limit_reached
+              - brand_asset_too_large
+              - brand_asset_type_unsupported
+              - brand_data_conflict
+              - brand_font_glyphs_exceeded
+              - brand_font_tables_invalid
+              - brand_image_animated
+              - brand_image_dimensions_invalid
+              - brand_image_pixels_exceeded
+              - brand_kit_colours_invalid
+              - brand_kit_conflict
+              - brand_kit_limit
+              - brand_kit_name_invalid
+              - brand_kit_not_found
+              - brand_kit_patch_empty
+              - brand_kit_tone_invalid
+              - brand_kit_unavailable
+              - captcha_rejected
+              - checkout_superseded
+              - cross_origin_rejected
+              - csrf_rejected
+              - download_expired
+              - email_already_set
+              - gallery_template_not_found
+              - generated_template_invalid
+              - idempotency_conflict
+              - image_asset_header_unsupported
+              - image_asset_invalid
+              - image_asset_limit
+              - image_asset_not_found
+              - image_asset_reference_invalid
+              - image_asset_too_large
+              - image_asset_type_unsupported
+              - image_asset_unavailable
+              - image_url_invalid
+              - image_url_unavailable
+              - insufficient_credits
+              - internal_error
+              - invalid_cursor
+              - invalid_email
+              - invalid_event
+              - invalid_link
+              - invalid_profile
+              - invalid_request
+              - invalid_upload
+              - job_not_finished
+              - key_concurrency_limited
+              - key_limit_reached
+              - method_not_allowed
+              - no_billing_customer
+              - not_found
+              - operation_conflict
+              - operation_limit_exceeded
+              - operation_pending
+              - overage_limit_reached
+              - overage_unavailable
+              - overloaded
+              - playground_busy
+              - playground_request_invalid
+              - playground_selection_invalid
+              - playground_session_limited
+              - playground_unavailable
+              - policy_version_stale
+              - provider_unavailable
+              - rate_limited
+              - render_probe_busy
+              - render_probe_failed
+              - render_probe_not_configured
+              - render_probe_required
+              - render_probe_timeout
+              - request_headers_too_large
+              - request_too_large
+              - resize_timeout
+              - signed_out
+              - spend_cap_reached
+              - template_build_not_found
+              - template_data_collection_limit
+              - template_data_depth_limit
+              - template_data_invalid
+              - template_data_limit
+              - template_depth_limit
+              - template_draft_not_found
+              - template_evaluation_error
+              - template_invalid_filter_input
+              - template_missing_data
+              - template_output_limit
+              - template_not_found
+              - template_schema_complexity
+              - template_schema_draft_unsupported
+              - template_schema_invalid
+              - template_schema_too_large
+              - template_size_canvas_mismatch
+              - template_size_data_overrides_too_large
+              - template_size_duplicate_id
+              - template_size_invalid_dimensions
+              - template_size_invalid_id
+              - template_size_invalid_name
+              - template_sizes_too_large
+              - template_sizes_too_many
+              - template_source_limit
+              - template_syntax_error
+              - template_timeout
+              - template_version_changed
+              - template_work_limit
+              - testimonial_busy
+              - testimonial_invalid
+              - testimonial_rate_limited
+              - testimonial_unavailable
+              - unauthorized
+              - unsupported_media_type
+              - webhook_limit_reached
+              description: A fixed, machine-readable error code.
+            message:
+              type: string
+              description: A fixed, human-readable message.
+            request_id:
+              type: string
+              format: uuid
+              description: The identifier this answer also carries in its x-request-id header.
+            details:
+              type: array
+              description: Present on a validation failure. Schema failures return at most 16 entries with bounded data paths and fixed reasons. Values from the request are never repeated.
+              items:
+                $ref: '#/components/schemas/FieldDetail'
+            retry:
+              $ref: '#/components/schemas/RetryInfo'
+            plan_limit:
+              $ref: '#/components/schemas/PlanLimitInfo'
+          required:
+          - code
+          - message
+          - request_id
+          additionalProperties: false
+      required:
+      - error
+      additionalProperties: false
+  headers:
+    XRequestId:
+      description: The UUID that identifies this request and matches error.request_id on an error response.
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-thirds_session
+      description: A browser session. Browser writes also require the matching x-csrf-token header from GET /v1/me.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
+x-refined-from:
+- thirds-ai-openapi.json
+- thirds-ai-openapi.yml
+x-unmatched-v1-responses:
+  description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
+  '404':
+    $ref: '#/components/responses/NotFound'
+  '431':
+    $ref: '#/components/responses/RequestHeadersTooLarge'

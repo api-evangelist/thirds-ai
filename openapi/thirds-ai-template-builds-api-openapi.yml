@@ -1,0 +1,1017 @@
+openapi: 3.2.0
+info:
+  title: Thirds Ai Template Builds API
+  version: 1.0.0
+  description: 'Operations tagged Template Builds across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://thirds.ai
+tags:
+- name: Template Builds
+paths:
+  /v1/template-builds:
+    post:
+      summary: Start a template build
+      description: 'Start one durable Build a template conversation from words, supported HTML, one source image, or your own working template source. The fixed successful price is 50 credits. A build from source makes no model call and costs 0 credits. A failed build releases the full reservation. Free monthly credits cannot pay for AI work: an account whose trial, pack, and subscription credits cannot cover the price answers 402 ai_needs_paid_credits and holds nothing. An AI message often takes a minute or two.'
+      operationId: createTemplateBuild
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: ^[ -~]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateBuildCreate'
+      responses:
+        '200':
+          description: An earlier matching request was replayed.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuild'
+        '202':
+          description: The durable build was accepted.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuild'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '402':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+  /v1/template-builds/{build_id}:
+    parameters:
+    - name: build_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateBuildId'
+    get:
+      summary: Get a template build
+      operationId: getTemplateBuild
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The current draft and latest message facts.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuild'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+  /v1/template-builds/{build_id}/messages:
+    parameters:
+    - name: build_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateBuildId'
+    get:
+      summary: List template chat messages
+      operationId: listTemplateMessages
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The user-visible messages in chat order. One chat holds at most 100 messages.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items:
+                  $ref: '#/components/schemas/TemplateMessage'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    post:
+      summary: Edit the working template
+      description: 'Run one later AI edit. A text or HTML edit costs 25 credits. A new source image costs 50 credits. A source message replaces the draft with your own working template, makes no model call, and costs 0 credits. A failed edit keeps the previous valid draft and releases the reservation. Free monthly credits cannot pay for AI work: an account whose trial, pack, and subscription credits cannot cover the price answers 402 ai_needs_paid_credits and holds nothing. An AI message often takes a minute or two.'
+      operationId: editTemplateBuild
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: ^[ -~]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateMessageCreate'
+      responses:
+        '200':
+          description: An earlier matching edit was replayed.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuild'
+        '202':
+          description: The durable edit was accepted.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuild'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '402':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+  /v1/template-builds/{build_id}/draft:
+    parameters:
+    - name: build_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateBuildId'
+    get:
+      summary: Get the working template
+      description: Read the current draft as editable source, sample data, schema, and output. The build has no draft until its first message succeeds.
+      operationId: getTemplateBuildDraft
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The current working template.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuildDraft'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+  /v1/template-builds/{build_id}/messages/{message_id}/draft:
+    parameters:
+    - name: build_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateBuildId'
+    - name: message_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateMessageId'
+    get:
+      summary: Get a completed message draft
+      description: Read the retained final source, sample data, schema, and output from a succeeded message in an owned build. The response excludes the brand snapshot. Reading it changes no state and costs no credits. Pending, failed, and cancelled messages have no final draft.
+      operationId: getTemplateMessageDraft
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The final draft. Cache-Control is private, no-store.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuildDraft'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+  /v1/template-builds/{build_id}/messages/{message_id}:
+    parameters:
+    - name: build_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateBuildId'
+    - name: message_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateMessageId'
+    delete:
+      summary: Cancel a pending template message
+      operationId: cancelTemplateMessage
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The message was cancelled and its reservation was released.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateMessage'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+  /v1/template-builds/{build_id}/publish:
+    parameters:
+    - name: build_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TemplateBuildId'
+    post:
+      summary: Publish the current working template
+      description: Explicitly publish the current valid draft as one normal immutable saved-template version. Repeating publication of the same draft returns the same version.
+      operationId: publishTemplateBuild
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: This draft was already published.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplatePublication'
+        '201':
+          description: The immutable template version was published.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplatePublication'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Template Builds
+    servers:
+    - url: https://thirds.ai
+components:
+  schemas:
+    TemplateOutput:
+      oneOf:
+      - type: object
+        properties:
+          type:
+            const: pdf
+        required:
+        - type
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: image
+          format:
+            type: string
+            enum:
+            - png
+            - jpeg
+            - webp
+          width:
+            type: integer
+            minimum: 320
+            maximum: 7680
+          height:
+            type: integer
+            minimum: 200
+            maximum: 4320
+        required:
+        - type
+        - format
+        - width
+        - height
+        additionalProperties: false
+    TemplatePublication:
+      type: object
+      properties:
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - template_id
+      - version
+      additionalProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    TemplateBuild:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/TemplateBuildId'
+        brand_kit_id:
+          $ref: '#/components/schemas/BrandKitId'
+        current_draft:
+          type: boolean
+        current_message_id:
+          oneOf:
+          - $ref: '#/components/schemas/TemplateMessageId'
+          - type: 'null'
+        published_template_id:
+          oneOf:
+          - $ref: '#/components/schemas/TemplateId'
+          - type: 'null'
+        message:
+          $ref: '#/components/schemas/TemplateMessage'
+      required:
+      - id
+      - brand_kit_id
+      - current_draft
+      - current_message_id
+      - published_template_id
+      - message
+      additionalProperties: false
+    TemplateBuildCreate:
+      type: object
+      properties:
+        brand_kit_id:
+          $ref: '#/components/schemas/BrandKitId'
+        input:
+          $ref: '#/components/schemas/TemplateBuildInput'
+        input_mode:
+          type: string
+          enum:
+          - blank
+          - html
+          description: How new manual work starts. Only source input accepts this field. Omit it when the source comes from a saved template or an existing chat.
+        output:
+          $ref: '#/components/schemas/TemplateOutputIntent'
+      required:
+      - brand_kit_id
+      - input
+      if:
+        required:
+        - input_mode
+      then:
+        properties:
+          input:
+            properties:
+              type:
+                const: source
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    TemplateBuildInput:
+      oneOf:
+      - type: object
+        properties:
+          type:
+            const: prompt
+          prompt:
+            type: string
+            minLength: 1
+            maxLength: 65536
+        required:
+        - type
+        - prompt
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: html
+          html:
+            type: string
+            minLength: 1
+            maxLength: 65536
+        required:
+        - type
+        - html
+        additionalProperties: false
+      - type: object
+        description: Rebuild a still PNG, JPEG, or WebP as an editable branded template. Inspired by the source, not a pixel copy. At most 10 MiB, 7680 by 4320, and 32 million pixels. An invalid file fails before the model.
+        properties:
+          type:
+            const: image
+          base64:
+            type: string
+            minLength: 1
+            maxLength: 13981016
+            contentEncoding: base64
+        required:
+        - type
+        - base64
+        additionalProperties: false
+      - type: object
+        description: Your own working template, sent as data. It must pass the saved-template checks and evaluate with sample_data. It becomes the draft without a model call and costs 0 credits.
+        properties:
+          type:
+            const: source
+          source:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+          sample_data:
+            type: object
+          schema:
+            oneOf:
+            - type: object
+            - type: boolean
+        required:
+        - type
+        - source
+        additionalProperties: false
+    TemplateMessageId:
+      type: string
+      pattern: ^msg_[0-9a-f]{32}$
+    TemplateMessageCreate:
+      type: object
+      properties:
+        input:
+          $ref: '#/components/schemas/TemplateBuildInput'
+        output:
+          $ref: '#/components/schemas/TemplateOutputIntent'
+      required:
+      - input
+      additionalProperties: false
+    TemplateBuildDraft:
+      type: object
+      properties:
+        source:
+          type: string
+          maxLength: 1048576
+        sample_data:
+          type: object
+        schema: {}
+        output:
+          $ref: '#/components/schemas/TemplateOutput'
+      required:
+      - source
+      - sample_data
+      - schema
+      - output
+      additionalProperties: false
+    TemplateOutputIntent:
+      oneOf:
+      - type: object
+        description: Let the model choose PDF or image from the message. An image result from a source image uses the source dimensions.
+        properties:
+          type:
+            const: auto
+        required:
+        - type
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: pdf
+        required:
+        - type
+        additionalProperties: false
+      - type: object
+        description: Request an image. Set both width and height to override the source dimensions. Without a source image, omitted dimensions use 1200 by 628.
+        properties:
+          type:
+            const: image
+          format:
+            type: string
+            enum:
+            - png
+            - jpeg
+            - webp
+            default: png
+          width:
+            type: integer
+            minimum: 320
+            maximum: 7680
+          height:
+            type: integer
+            minimum: 200
+            maximum: 4320
+        required:
+        - type
+        additionalProperties: false
+    BrandKitId:
+      type: string
+      pattern: ^kit_[0-9a-f]{32}$
+    TemplateMessage:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/TemplateMessageId'
+        state:
+          type: string
+          enum:
+          - queued
+          - running
+          - previewing
+          - succeeded
+          - failed
+          - cancelled
+        phase:
+          type: string
+          enum:
+          - generate
+          - candidate
+          - review
+          - final
+        input_type:
+          type: string
+          enum:
+          - prompt
+          - html
+          - image
+          - source
+        credits:
+          type: integer
+          enum:
+          - 0
+          - 25
+          - 50
+        preview_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^(pdf|image)_[0-9a-f]{32}$
+        output:
+          oneOf:
+          - $ref: '#/components/schemas/TemplateOutput'
+          - type: 'null'
+        review_count:
+          type: integer
+          minimum: 0
+          maximum: 5
+        max_reviews:
+          type: integer
+          minimum: 0
+          maximum: 5
+        input_text:
+          type: string
+          maxLength: 65536
+        repair_code:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          description: The last safe generation or render code that blocked this message. Present while a repair is in progress and after a failed message. It never holds customer content.
+        failure_category:
+          type:
+          - string
+          - 'null'
+          enum:
+          - provider
+          - validation
+          - renderer
+          - unsupported_input
+          - internal
+          - null
+        failure_code:
+          type:
+          - string
+          - 'null'
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+      required:
+      - id
+      - state
+      - phase
+      - input_type
+      - credits
+      - preview_id
+      - output
+      - review_count
+      - max_reviews
+      - failure_category
+      - failure_code
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    TemplateBuildId:
+      type: string
+      pattern: ^build_[0-9a-f]{32}$
+    ErrorEnvelope:
+      type: object
+      description: The one error shape every backend response uses.
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+              - account_suspended
+              - account_concurrency_limited
+              - abuse_limited
+              - ai_failure_limit_reached
+              - ai_needs_paid_credits
+              - already_subscribed
+              - auth_unavailable
+              - batch_row_limit
+              - billing_unavailable
+              - brand_asset_account_limit_reached
+              - brand_asset_invalid
+              - brand_asset_kind_invalid
+              - brand_asset_kind_mismatch
+              - brand_asset_limit_reached
+              - brand_asset_too_large
+              - brand_asset_type_unsupported
+              - brand_data_conflict
+              - brand_font_glyphs_exceeded
+              - brand_font_tables_invalid
+              - brand_image_animated
+              - brand_image_dimensions_invalid
+              - brand_image_pixels_exceeded
+              - brand_kit_colours_invalid
+              - brand_kit_conflict
+              - brand_kit_limit
+              - brand_kit_name_invalid
+              - brand_kit_not_found
+              - brand_kit_patch_empty
+              - brand_kit_tone_invalid
+              - brand_kit_unavailable
+              - captcha_rejected
+              - checkout_superseded
+              - cross_origin_rejected
+              - csrf_rejected
+              - download_expired
+              - email_already_set
+              - gallery_template_not_found
+              - generated_template_invalid
+              - idempotency_conflict
+              - image_asset_header_unsupported
+              - image_asset_invalid
+              - image_asset_limit
+              - image_asset_not_found
+              - image_asset_reference_invalid
+              - image_asset_too_large
+              - image_asset_type_unsupported
+              - image_asset_unavailable
+              - image_url_invalid
+              - image_url_unavailable
+              - insufficient_credits
+              - internal_error
+              - invalid_cursor
+              - invalid_email
+              - invalid_event
+              - invalid_link
+              - invalid_profile
+              - invalid_request
+              - invalid_upload
+              - job_not_finished
+              - key_concurrency_limited
+              - key_limit_reached
+              - method_not_allowed
+              - no_billing_customer
+              - not_found
+              - operation_conflict
+              - operation_limit_exceeded
+              - operation_pending
+              - overage_limit_reached
+              - overage_unavailable
+              - overloaded
+              - playground_busy
+              - playground_request_invalid
+              - playground_selection_invalid
+              - playground_session_limited
+              - playground_unavailable
+              - policy_version_stale
+              - provider_unavailable
+              - rate_limited
+              - render_probe_busy
+              - render_probe_failed
+              - render_probe_not_configured
+              - render_probe_required
+              - render_probe_timeout
+              - request_headers_too_large
+              - request_too_large
+              - resize_timeout
+              - signed_out
+              - spend_cap_reached
+              - template_build_not_found
+              - template_data_collection_limit
+              - template_data_depth_limit
+              - template_data_invalid
+              - template_data_limit
+              - template_depth_limit
+              - template_draft_not_found
+              - template_evaluation_error
+              - template_invalid_filter_input
+              - template_missing_data
+              - template_output_limit
+              - template_not_found
+              - template_schema_complexity
+              - template_schema_draft_unsupported
+              - template_schema_invalid
+              - template_schema_too_large
+              - template_size_canvas_mismatch
+              - template_size_data_overrides_too_large
+              - template_size_duplicate_id
+              - template_size_invalid_dimensions
+              - template_size_invalid_id
+              - template_size_invalid_name
+              - template_sizes_too_large
+              - template_sizes_too_many
+              - template_source_limit
+              - template_syntax_error
+              - template_timeout
+              - template_version_changed
+              - template_work_limit
+              - testimonial_busy
+              - testimonial_invalid
+              - testimonial_rate_limited
+              - testimonial_unavailable
+              - unauthorized
+              - unsupported_media_type
+              - webhook_limit_reached
+              description: A fixed, machine-readable error code.
+            message:
+              type: string
+              description: A fixed, human-readable message.
+            request_id:
+              type: string
+              format: uuid
+              description: The identifier this answer also carries in its x-request-id header.
+            details:
+              type: array
+              description: Present on a validation failure. Schema failures return at most 16 entries with bounded data paths and fixed reasons. Values from the request are never repeated.
+              items:
+                $ref: '#/components/schemas/FieldDetail'
+            retry:
+              $ref: '#/components/schemas/RetryInfo'
+            plan_limit:
+              $ref: '#/components/schemas/PlanLimitInfo'
+          required:
+          - code
+          - message
+          - request_id
+          additionalProperties: false
+      required:
+      - error
+      additionalProperties: false
+  responses:
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  headers:
+    XRequestId:
+      description: The UUID that identifies this request and matches error.request_id on an error response.
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-thirds_session
+      description: A browser session. Browser writes also require the matching x-csrf-token header from GET /v1/me.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
+x-refined-from:
+- thirds-ai-openapi.json
+- thirds-ai-openapi.yml
+x-unmatched-v1-responses:
+  description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
+  '404':
+    $ref: '#/components/responses/NotFound'
+  '431':
+    $ref: '#/components/responses/RequestHeadersTooLarge'

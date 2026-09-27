@@ -1,0 +1,1174 @@
+openapi: 3.2.0
+info:
+  title: Thirds Ai Webhooks API
+  version: 1.0.0
+  description: 'Operations tagged Webhooks across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://thirds.ai
+tags:
+- name: Webhooks
+paths:
+  /v1/webhooks/{webhook_id}/test:
+    post:
+      summary: Send a signed test event
+      description: Queue one sample render.succeeded event through the normal delivery worker. It spends no credits and creates no render. A recorded result schedules no retry, and tests cannot be replayed. Recovery can resend an unfinished attempt with the same event ID. Disabled destinations can be tested. One test per destination can wait at a time; completed tests are limited to one per minute. The destination signing secrets and egress policy apply.
+      operationId: testWebhook
+      security:
+      - bearerAuth: []
+      - sessionCookie: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '401':
+          description: A valid session or API key is required.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '429':
+          description: The request limit was reached. Retry after the time in Retry-After.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: The request failed internally.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this ID belongs to this account.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '200':
+          description: The test attempt finished.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookTest'
+        '202':
+          description: The test is still queued or in flight. Read the delivery log for its result before sending another.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookTest'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks/{webhook_id}/deliveries:
+    get:
+      summary: Read recent webhook attempts
+      description: Return up to 20 newest attempts for this destination, in reverse time order. Attempts expire after 30 days. No request or response body is stored.
+      operationId: listWebhookDeliveries
+      security:
+      - bearerAuth: []
+      - sessionCookie: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '401':
+          description: A valid session or API key is required.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '429':
+          description: The request limit was reached. Retry after the time in Retry-After.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: The request failed internally.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this ID belongs to this account.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '200':
+          description: The latest attempts for this destination.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookDeliveryList'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks:
+    post:
+      summary: Register a webhook destination
+      description: 'Register one HTTPS destination for terminal render events. The URL must pass the same egress policy the platform applies to every outbound request — public HTTPS on port 443, no credentials, and a DNS answer set of public addresses only — and delivery rechecks all of it on every connection, so a name that later resolves privately is refused then too. The signing secret is returned in this response and never again. Every delivery carries a Thirds-Signature header of the form "t=,v1=": each v1 value is HMAC-SHA256 over the exact bytes "." with one signing secret, so verify against the raw body before parsing it, and refuse a timestamp too far from your own clock to bound replays. During a rotation overlap the header carries two v1 values — the current secret''s first, then the previous secret''s — and a receiver accepts the delivery when any one value matches.'
+      operationId: createWebhook
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewWebhook'
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '201':
+          description: The destination was registered and is enabled. This is the only response, with rotation's, that ever carries the signing secret.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookWithSecret'
+        '400':
+          description: The URL failed the egress policy — not HTTPS on port 443, malformed, carrying credentials, or resolving to a private, loopback, link-local, metadata, or reserved address — or the events list was empty, had duplicates, had more than three entries, or named an unknown event. The details entry carries the stable policy code that refused it.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '413':
+          description: The request body is larger than 16 KiB.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '415':
+          description: The request did not carry a JSON content type.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: The account already holds ten webhook destinations. Delete one before registering another.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    get:
+      summary: List webhook destinations
+      description: List every webhook destination of the authenticated account, most recently created first. The signing secret never appears here.
+      operationId: listWebhooks
+      security:
+      - bearerAuth: []
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '200':
+          description: The account's destinations.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookList'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks/{webhook_id}:
+    get:
+      summary: Read a webhook destination
+      description: Read one destination of the authenticated account, without its signing secret.
+      operationId: getWebhook
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '200':
+          description: The destination.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    delete:
+      summary: Delete a webhook destination
+      description: Delete one destination of the authenticated account. Deliveries stop at once, and events not yet delivered to it are dropped.
+      operationId: deleteWebhook
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '204':
+          description: The destination is deleted. There is no body.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks/{webhook_id}/rotate:
+    post:
+      summary: Rotate a webhook destination's signing secret
+      description: 'Mint a new signing secret for one destination. The new secret signs immediately and is returned in this response and never again. The previous secret keeps signing alongside it for 24 hours — every delivery in the overlap carries both signatures — so switch the receiver to the new secret inside that window. Rotating again during an overlap replaces the previous secret at once: only the last two secrets ever sign.'
+      operationId: rotateWebhookSecret
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '200':
+          description: The destination with its new secret. This is the only response, with creation's, that ever carries the signing secret.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookWithSecret'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks/{webhook_id}/disable:
+    post:
+      summary: Disable a webhook destination
+      description: Stop deliveries to one destination without deleting it. Disabling a destination that is already disabled returns the same answer again rather than an error, so a retried request is never rejected.
+      operationId: disableWebhook
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '200':
+          description: The destination, now disabled by owner request.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks/{webhook_id}/enable:
+    post:
+      summary: Enable a webhook destination
+      description: Resume deliveries to one destination, whether the owner disabled it or repeated delivery failures did, and reset its consecutive failure count. Enabling a destination that is already enabled returns the same answer again rather than an error, so a retried request is never rejected.
+      operationId: enableWebhook
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '200':
+          description: The destination, enabled again.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+  /v1/webhooks/{webhook_id}/replay:
+    post:
+      summary: Replay a webhook destination's failed events
+      description: Return every event of one destination that ran out of delivery attempts to the queue with a fresh attempt budget. An event gets eight attempts per creation or replay, spread over roughly one day of growing backoff; after that it is failed and waits here. A replayed delivery carries the same event id and the same body as before, with a current signature and timestamp, so a receiver that stores event ids deduplicates it like any other retry. Replaying a destination with no failed events answers a count of zero rather than an error, so a retried request is never rejected.
+      operationId: replayWebhook
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        description: The destination's public identifier, such as "wh_1f8b3c7d5e2a49061f8b3c7d5e2a4906".
+        schema:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '200':
+          description: How many failed events returned to the queue.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookReplay'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No destination with this identifier belongs to the authenticated account. This is also the answer for an identifier that does not exist at all, so a request can never learn which one is true.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Webhooks
+    servers:
+    - url: https://thirds.ai
+components:
+  responses:
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    WebhookDelivery:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^wa_[0-9a-f]{32}$
+        event:
+          type: string
+          enum:
+          - render.succeeded
+          - render.failed
+          - render.cancelled
+        created_at:
+          type: string
+          format: date-time
+        status_code:
+          type:
+          - integer
+          - 'null'
+          minimum: 200
+          maximum: 599
+          description: Null when no HTTP status is received.
+        is_test:
+          type: boolean
+          description: True for a sample sent by the test action.
+        retry_count:
+          type: integer
+          minimum: 0
+          maximum: 7
+      required:
+      - id
+      - event
+      - created_at
+      - status_code
+      - retry_count
+      - is_test
+      additionalProperties: false
+    WebhookTest:
+      type: object
+      properties:
+        status_code:
+          type:
+          - integer
+          - 'null'
+          minimum: 200
+          maximum: 599
+        delivered:
+          type: boolean
+      required:
+      - status_code
+      - delivered
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    WebhookList:
+      type: object
+      description: Every webhook destination the account holds. The cap is ten, so the list is never paged.
+      properties:
+        data:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/Webhook'
+      required:
+      - data
+      additionalProperties: false
+    WebhookWithSecret:
+      description: One webhook destination exactly as creation and rotation answer it. This is the only shape that ever carries the signing secret.
+      allOf:
+      - $ref: '#/components/schemas/WebhookFields'
+      - type: object
+        properties:
+          secret:
+            type: string
+            pattern: ^thirds_whsec_[0-9a-f]{64}$
+            description: 'The full signing secret: "thirds_whsec_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again; store it and verify every delivery''s Thirds-Signature header with it.'
+        required:
+        - secret
+      unevaluatedProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    WebhookFields:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+          description: 'The destination''s public identifier: "wh_" followed by 32 lowercase hexadecimal characters.'
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        events:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - render.cancelled
+            - render.failed
+            - render.succeeded
+          description: The selected events, always sorted and distinct.
+        status:
+          type: string
+          enum:
+          - enabled
+          - disabled
+        disabled_reason:
+          type:
+          - string
+          - 'null'
+          enum:
+          - owner_request
+          - delivery_failure
+          - null
+          description: 'Why a disabled destination is disabled: the owner asked, or delivery failed repeatedly. Null while the destination is enabled.'
+        display_prefix:
+          type: string
+          description: The first characters of the signing secret, enough to tell destinations apart in a list.
+        last_delivery_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: Time of the most recent recorded attempt, including tests.
+        failure_count:
+          type: integer
+          minimum: 0
+          description: Consecutive normal delivery failures. A success or enable resets it. Test events do not change it.
+        created_at:
+          type: string
+          format: date-time
+        previous_secret_expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: 'Set while a rotation overlap is running: until this instant every delivery also carries a signature made with the previous secret.'
+      required:
+      - id
+      - url
+      - events
+      - status
+      - disabled_reason
+      - display_prefix
+      - created_at
+      - last_delivery_at
+      - failure_count
+      - previous_secret_expires_at
+    WebhookReplay:
+      type: object
+      description: What one replay request did.
+      properties:
+        replayed:
+          type: integer
+          minimum: 0
+          description: How many failed events returned to the queue with a fresh attempt budget.
+      required:
+      - replayed
+      additionalProperties: false
+    Webhook:
+      description: One webhook destination, without its signing secret.
+      allOf:
+      - $ref: '#/components/schemas/WebhookFields'
+      unevaluatedProperties: false
+    NewWebhook:
+      type: object
+      description: What creating a webhook destination needs.
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: The HTTPS URL deliveries are sent to. It must use port 443, carry no credentials, and resolve to public addresses only; private, loopback, link-local, metadata, and reserved destinations are refused, at registration and again on every delivery connection.
+        events:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - render.cancelled
+            - render.failed
+            - render.succeeded
+          description: The terminal render events this destination receives. A body without this field selects every event.
+      required:
+      - url
+      additionalProperties: false
+    WebhookDeliveryList:
+      type: object
+      properties:
+        data:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/WebhookDelivery'
+      required:
+      - data
+      additionalProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    ErrorEnvelope:
+      type: object
+      description: The one error shape every backend response uses.
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+              - account_suspended
+              - account_concurrency_limited
+              - abuse_limited
+              - ai_failure_limit_reached
+              - ai_needs_paid_credits
+              - already_subscribed
+              - auth_unavailable
+              - batch_row_limit
+              - billing_unavailable
+              - brand_asset_account_limit_reached
+              - brand_asset_invalid
+              - brand_asset_kind_invalid
+              - brand_asset_kind_mismatch
+              - brand_asset_limit_reached
+              - brand_asset_too_large
+              - brand_asset_type_unsupported
+              - brand_data_conflict
+              - brand_font_glyphs_exceeded
+              - brand_font_tables_invalid
+              - brand_image_animated
+              - brand_image_dimensions_invalid
+              - brand_image_pixels_exceeded
+              - brand_kit_colours_invalid
+              - brand_kit_conflict
+              - brand_kit_limit
+              - brand_kit_name_invalid
+              - brand_kit_not_found
+              - brand_kit_patch_empty
+              - brand_kit_tone_invalid
+              - brand_kit_unavailable
+              - captcha_rejected
+              - checkout_superseded
+              - cross_origin_rejected
+              - csrf_rejected
+              - download_expired
+              - email_already_set
+              - gallery_template_not_found
+              - generated_template_invalid
+              - idempotency_conflict
+              - image_asset_header_unsupported
+              - image_asset_invalid
+              - image_asset_limit
+              - image_asset_not_found
+              - image_asset_reference_invalid
+              - image_asset_too_large
+              - image_asset_type_unsupported
+              - image_asset_unavailable
+              - image_url_invalid
+              - image_url_unavailable
+              - insufficient_credits
+              - internal_error
+              - invalid_cursor
+              - invalid_email
+              - invalid_event
+              - invalid_link
+              - invalid_profile
+              - invalid_request
+              - invalid_upload
+              - job_not_finished
+              - key_concurrency_limited
+              - key_limit_reached
+              - method_not_allowed
+              - no_billing_customer
+              - not_found
+              - operation_conflict
+              - operation_limit_exceeded
+              - operation_pending
+              - overage_limit_reached
+              - overage_unavailable
+              - overloaded
+              - playground_busy
+              - playground_request_invalid
+              - playground_selection_invalid
+              - playground_session_limited
+              - playground_unavailable
+              - policy_version_stale
+              - provider_unavailable
+              - rate_limited
+              - render_probe_busy
+              - render_probe_failed
+              - render_probe_not_configured
+              - render_probe_required
+              - render_probe_timeout
+              - request_headers_too_large
+              - request_too_large
+              - resize_timeout
+              - signed_out
+              - spend_cap_reached
+              - template_build_not_found
+              - template_data_collection_limit
+              - template_data_depth_limit
+              - template_data_invalid
+              - template_data_limit
+              - template_depth_limit
+              - template_draft_not_found
+              - template_evaluation_error
+              - template_invalid_filter_input
+              - template_missing_data
+              - template_output_limit
+              - template_not_found
+              - template_schema_complexity
+              - template_schema_draft_unsupported
+              - template_schema_invalid
+              - template_schema_too_large
+              - template_size_canvas_mismatch
+              - template_size_data_overrides_too_large
+              - template_size_duplicate_id
+              - template_size_invalid_dimensions
+              - template_size_invalid_id
+              - template_size_invalid_name
+              - template_sizes_too_large
+              - template_sizes_too_many
+              - template_source_limit
+              - template_syntax_error
+              - template_timeout
+              - template_version_changed
+              - template_work_limit
+              - testimonial_busy
+              - testimonial_invalid
+              - testimonial_rate_limited
+              - testimonial_unavailable
+              - unauthorized
+              - unsupported_media_type
+              - webhook_limit_reached
+              description: A fixed, machine-readable error code.
+            message:
+              type: string
+              description: A fixed, human-readable message.
+            request_id:
+              type: string
+              format: uuid
+              description: The identifier this answer also carries in its x-request-id header.
+            details:
+              type: array
+              description: Present on a validation failure. Schema failures return at most 16 entries with bounded data paths and fixed reasons. Values from the request are never repeated.
+              items:
+                $ref: '#/components/schemas/FieldDetail'
+            retry:
+              $ref: '#/components/schemas/RetryInfo'
+            plan_limit:
+              $ref: '#/components/schemas/PlanLimitInfo'
+          required:
+          - code
+          - message
+          - request_id
+          additionalProperties: false
+      required:
+      - error
+      additionalProperties: false
+  headers:
+    XRequestId:
+      description: The UUID that identifies this request and matches error.request_id on an error response.
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-thirds_session
+      description: A browser session. Browser writes also require the matching x-csrf-token header from GET /v1/me.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
+x-refined-from:
+- thirds-ai-openapi.json
+- thirds-ai-openapi.yml
+x-unmatched-v1-responses:
+  description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
+  '404':
+    $ref: '#/components/responses/NotFound'
+  '431':
+    $ref: '#/components/responses/RequestHeadersTooLarge'

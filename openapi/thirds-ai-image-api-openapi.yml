@@ -1,0 +1,947 @@
+openapi: 3.2.0
+info:
+  title: Thirds Ai Image API
+  version: 1.0.0
+  description: 'Operations tagged Image across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://thirds.ai
+tags:
+- name: Image
+paths:
+  /v1/image:
+    post:
+      summary: Create a static image
+      description: Render one PNG, JPEG, or WebP from raw HTML, an inline stateless template, or one owned saved-template version. Returns 200 for a terminal job or 202 while the accepted job remains queued or running. A terminal job can be succeeded, failed, or cancelled; check status before downloading. Send wait=false to skip the bounded wait. A successful render costs exactly one credit; a failed or cancelled render costs zero.
+      operationId: createImage
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: ^[ -~]+$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageRequest'
+            examples:
+              png:
+                value:
+                  html: <h1>Quarterly report</h1>
+                  image:
+                    format: png
+                    width: 1280
+                    height: 720
+                    transparent: false
+      responses:
+        '200':
+          description: The job is terminal. Check status for succeeded, failed, or cancelled; HTTP 200 does not mean the render succeeded.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageJob'
+        '202':
+          description: The image job is durable and remains queued or running.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            Location:
+              schema:
+                type: string
+            Retry-After:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageJob'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '402':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Image
+    get:
+      summary: List image history
+      description: 'List the authenticated account''s image jobs, newest first. Failed or cancelled jobs removed through DELETE do not appear. Bounded by keyset: pass the previous page''s next_cursor to continue, rather than an offset, so a page already read stays stable while new jobs are created.'
+      operationId: listImageHistory
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: q
+        in: query
+        description: Case-insensitive search of references, template names, and file types.
+        schema:
+          type: string
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]*$
+      - name: limit
+        in: query
+        required: false
+        description: 1 to 100. Defaults to 20. A value outside this range is clamped rather than refused.
+        schema:
+          type: integer
+          default: 20
+      - name: cursor
+        in: query
+        required: false
+        description: An opaque value from an earlier page's next_cursor. A cursor that cannot be read is refused with 400.
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+        '200':
+          description: One page of the account's image history.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageHistoryPage'
+        '400':
+          description: The limit parameter was not a whole number, the cursor could not be read, or the query held an unknown parameter.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: The request did not carry a valid, active API key.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+            WWW-Authenticate:
+              description: Always "Bearer" on this response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: An internal error occurred.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+      - Image
+    servers:
+    - url: https://thirds.ai
+  /v1/image/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^image_[0-9a-f]{32}$
+    get:
+      summary: Get a static image's status
+      operationId: getImage
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The image job's current status.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageJob'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Image
+    delete:
+      summary: Delete an image file or an unsuccessful render
+      description: Remove a successful job's file, or remove a failed or cancelled job from history. Repeated requests are safe. The job stays readable by ID, and billing, abuse limits, and idempotency keys stay unchanged. Queued and running jobs return 409.
+      operationId: deleteImage
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The image job after file or history removal.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageJob'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Image
+    servers:
+    - url: https://thirds.ai
+components:
+  responses:
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    ImageRequestCommon:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: ^(?!.* $)(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9 ._-]*$
+          description: Download name. Surrounding spaces are refused. The server uses the real output extension. Omit it for a safe template-name and UTC creation-date name, or html-render and date for HTML.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        brand_kit_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^kit_[a-f0-9]{32}$
+          description: Select an owned active brand kit. This uses template evaluation and its 1 MiB source and data limits even when data is omitted. Overrides the source thirds-brand-kit meta default. Supplies reserved brand.name, brand.palette, brand.colours.primary/secondary/accent, brand.logo, brand.logos, and brand.fonts entries with family and src. data.brand is refused when a kit is selected. Only present palette roles and logos are supplied. Assets are captured before enqueue. Schemas validate customer data before brand is added.
+        image:
+          type: object
+          properties:
+            format:
+              type: string
+              enum:
+              - png
+              - jpeg
+              - webp
+            width:
+              type: integer
+              minimum: 320
+              maximum: 7680
+              default: 1280
+            height:
+              type: integer
+              minimum: 200
+              maximum: 4320
+              default: 720
+            quality:
+              type: integer
+              minimum: 1
+              maximum: 100
+            transparent:
+              type: boolean
+              default: false
+          required:
+          - format
+          allOf:
+          - if:
+              properties:
+                format:
+                  const: png
+            then:
+              not:
+                required:
+                - quality
+            else:
+              properties:
+                quality:
+                  default: 80
+          - if:
+              properties:
+                format:
+                  const: jpeg
+            then:
+              properties:
+                transparent:
+                  const: false
+          additionalProperties: false
+        javascript:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum:
+              - disabled
+              - enabled
+          additionalProperties: false
+        wait:
+          type: boolean
+          default: true
+      required:
+      - image
+    ImageRequest:
+      oneOf:
+      - $ref: '#/components/schemas/RawImageRequest'
+      - $ref: '#/components/schemas/StatelessTemplateImageRequest'
+      - $ref: '#/components/schemas/SavedTemplateImageRequest'
+    ImageHistoryItem:
+      type: object
+      description: One job in a bounded account history — the subset of ImageJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^image_[0-9a-f]{32}$
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          properties:
+            media_type:
+              type: string
+              enum:
+              - image/png
+              - image/jpeg
+              - image/webp
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    RawImageRequest:
+      allOf:
+      - $ref: '#/components/schemas/ImageRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 5242880
+        required:
+        - html
+      unevaluatedProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    ImageJob:
+      type: object
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^image_[0-9a-f]{32}$
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          properties:
+            media_type:
+              type: string
+              enum:
+              - image/png
+              - image/jpeg
+              - image/webp
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+        download:
+          type:
+          - object
+          - 'null'
+          properties:
+            url:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+          required:
+          - url
+          - expires_at
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      - download
+      additionalProperties: false
+    StatelessTemplateImageRequest:
+      allOf:
+      - $ref: '#/components/schemas/ImageRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+          data:
+            type: object
+        required:
+        - html
+        - data
+      unevaluatedProperties: false
+    ImageHistoryPage:
+      type: object
+      description: One bounded page of an account's image history, newest first.
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ImageHistoryItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+          description: Pass as the cursor query parameter to read the next page. Null on the last page.
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    SavedTemplateImageRequest:
+      allOf:
+      - $ref: '#/components/schemas/ImageRequestCommon'
+      - type: object
+        properties:
+          template_id:
+            $ref: '#/components/schemas/TemplateId'
+          version:
+            type: integer
+            minimum: 1
+          data:
+            type: object
+          size_id:
+            type:
+            - string
+            - 'null'
+            pattern: ^[a-z0-9][a-z0-9-]{0,39}$
+            description: Selects one saved size of the template instead of the original. The image width and height must match the size exactly.
+        required:
+        - template_id
+        - data
+      unevaluatedProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    ErrorEnvelope:
+      type: object
+      description: The one error shape every backend response uses.
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+              - account_suspended
+              - account_concurrency_limited
+              - abuse_limited
+              - ai_failure_limit_reached
+              - ai_needs_paid_credits
+              - already_subscribed
+              - auth_unavailable
+              - batch_row_limit
+              - billing_unavailable
+              - brand_asset_account_limit_reached
+              - brand_asset_invalid
+              - brand_asset_kind_invalid
+              - brand_asset_kind_mismatch
+              - brand_asset_limit_reached
+              - brand_asset_too_large
+              - brand_asset_type_unsupported
+              - brand_data_conflict
+              - brand_font_glyphs_exceeded
+              - brand_font_tables_invalid
+              - brand_image_animated
+              - brand_image_dimensions_invalid
+              - brand_image_pixels_exceeded
+              - brand_kit_colours_invalid
+              - brand_kit_conflict
+              - brand_kit_limit
+              - brand_kit_name_invalid
+              - brand_kit_not_found
+              - brand_kit_patch_empty
+              - brand_kit_tone_invalid
+              - brand_kit_unavailable
+              - captcha_rejected
+              - checkout_superseded
+              - cross_origin_rejected
+              - csrf_rejected
+              - download_expired
+              - email_already_set
+              - gallery_template_not_found
+              - generated_template_invalid
+              - idempotency_conflict
+              - image_asset_header_unsupported
+              - image_asset_invalid
+              - image_asset_limit
+              - image_asset_not_found
+              - image_asset_reference_invalid
+              - image_asset_too_large
+              - image_asset_type_unsupported
+              - image_asset_unavailable
+              - image_url_invalid
+              - image_url_unavailable
+              - insufficient_credits
+              - internal_error
+              - invalid_cursor
+              - invalid_email
+              - invalid_event
+              - invalid_link
+              - invalid_profile
+              - invalid_request
+              - invalid_upload
+              - job_not_finished
+              - key_concurrency_limited
+              - key_limit_reached
+              - method_not_allowed
+              - no_billing_customer
+              - not_found
+              - operation_conflict
+              - operation_limit_exceeded
+              - operation_pending
+              - overage_limit_reached
+              - overage_unavailable
+              - overloaded
+              - playground_busy
+              - playground_request_invalid
+              - playground_selection_invalid
+              - playground_session_limited
+              - playground_unavailable
+              - policy_version_stale
+              - provider_unavailable
+              - rate_limited
+              - render_probe_busy
+              - render_probe_failed
+              - render_probe_not_configured
+              - render_probe_required
+              - render_probe_timeout
+              - request_headers_too_large
+              - request_too_large
+              - resize_timeout
+              - signed_out
+              - spend_cap_reached
+              - template_build_not_found
+              - template_data_collection_limit
+              - template_data_depth_limit
+              - template_data_invalid
+              - template_data_limit
+              - template_depth_limit
+              - template_draft_not_found
+              - template_evaluation_error
+              - template_invalid_filter_input
+              - template_missing_data
+              - template_output_limit
+              - template_not_found
+              - template_schema_complexity
+              - template_schema_draft_unsupported
+              - template_schema_invalid
+              - template_schema_too_large
+              - template_size_canvas_mismatch
+              - template_size_data_overrides_too_large
+              - template_size_duplicate_id
+              - template_size_invalid_dimensions
+              - template_size_invalid_id
+              - template_size_invalid_name
+              - template_sizes_too_large
+              - template_sizes_too_many
+              - template_source_limit
+              - template_syntax_error
+              - template_timeout
+              - template_version_changed
+              - template_work_limit
+              - testimonial_busy
+              - testimonial_invalid
+              - testimonial_rate_limited
+              - testimonial_unavailable
+              - unauthorized
+              - unsupported_media_type
+              - webhook_limit_reached
+              description: A fixed, machine-readable error code.
+            message:
+              type: string
+              description: A fixed, human-readable message.
+            request_id:
+              type: string
+              format: uuid
+              description: The identifier this answer also carries in its x-request-id header.
+            details:
+              type: array
+              description: Present on a validation failure. Schema failures return at most 16 entries with bounded data paths and fixed reasons. Values from the request are never repeated.
+              items:
+                $ref: '#/components/schemas/FieldDetail'
+            retry:
+              $ref: '#/components/schemas/RetryInfo'
+            plan_limit:
+              $ref: '#/components/schemas/PlanLimitInfo'
+          required:
+          - code
+          - message
+          - request_id
+          additionalProperties: false
+      required:
+      - error
+      additionalProperties: false
+  headers:
+    XRequestId:
+      description: The UUID that identifies this request and matches error.request_id on an error response.
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-thirds_session
+      description: A browser session. Browser writes also require the matching x-csrf-token header from GET /v1/me.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
+x-refined-from:
+- thirds-ai-openapi.json
+- thirds-ai-openapi.yml
+x-unmatched-v1-responses:
+  description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
+  '404':
+    $ref: '#/components/responses/NotFound'
+  '431':
+    $ref: '#/components/responses/RequestHeadersTooLarge'

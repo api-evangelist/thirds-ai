@@ -1,0 +1,903 @@
+openapi: 3.2.0
+info:
+  title: Thirds Ai Brand Kits API
+  version: 1.0.0
+  description: 'Operations tagged Brand Kits across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://thirds.ai
+tags:
+- name: Brand Kits
+paths:
+  /v1/brand-kits:
+    post:
+      summary: Create a brand kit
+      description: 'Create one mutable account-owned brand kit. Logos and fonts are uploaded through the kit''s asset route after creation. The account plan sets how many kits the account can keep: 1 on Free, a pack-only account, and Starter, 5 on Growth, and 20 on Scale. Every kit of the account counts, archived kits too. A kit over that limit answers 409 brand_kit_limit with error.plan_limit. An account above its limit after a downgrade keeps every kit and can still change and archive them.'
+      operationId: createBrandKit
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandKitWrite'
+      responses:
+        '201':
+          description: The brand kit was created.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandKitDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    get:
+      summary: List brand kits
+      description: List the account's active and archived brand kits newest first. Asset metadata is omitted from the page; read one kit for its current assets.
+      operationId: listBrandKits
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - active
+          - archived
+          - all
+          default: all
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: cursor
+        in: query
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        '200':
+          description: One page of brand-kit summaries.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandKitPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    servers:
+    - url: https://thirds.ai
+  /v1/brand-kits/{brand_kit_id}:
+    parameters:
+    - name: brand_kit_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BrandKitId'
+    get:
+      summary: Get a brand kit
+      description: Return one owned kit and its current logo and font metadata. Replaced assets remain private durable content but are omitted.
+      operationId: getBrandKit
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The brand kit and its current assets.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandKitDetail'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    patch:
+      summary: Update a brand kit
+      description: Replace any supplied mutable brand values. Omitted fields stay unchanged; a null tone_guidance clears it. Archived kits cannot change.
+      operationId: updateBrandKit
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandKitPatch'
+      responses:
+        '200':
+          description: The updated kit and its current assets.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandKitDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    delete:
+      summary: Archive a brand kit
+      description: Archive one owned kit. The operation is idempotent. The kit and every current or replaced asset stay durable for already captured references.
+      operationId: archiveBrandKit
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: The brand kit is archived.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    servers:
+    - url: https://thirds.ai
+  /v1/brand-kits/{brand_kit_id}/assets:
+    parameters:
+    - name: brand_kit_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BrandKitId'
+    post:
+      summary: Add a brand asset
+      description: Add one logo or WOFF2 font to an active owned kit. The declared Content-Type and the complete bytes must agree. No customer bytes or storage reference appears in the response.
+      operationId: createBrandAsset
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+          font/woff2:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: The immutable asset was accepted and selected by the kit.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandAsset'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    servers:
+    - url: https://thirds.ai
+  /v1/brand-kits/{brand_kit_id}/assets/{asset_id}:
+    parameters:
+    - name: brand_kit_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BrandKitId'
+    - name: asset_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BrandAssetId'
+    get:
+      summary: Read a brand asset
+      description: Read the validated logo or font bytes from an owned kit. Captured assets remain readable after replacement or archive. Responses are private and must not be cached.
+      operationId: readBrandAsset
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: The validated image or WOFF2 font bytes.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            font/woff2:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    put:
+      summary: Replace a brand asset
+      description: Create a new immutable asset of the same kind and make it current. The old asset and bytes stay unchanged for any template or queued operation that already captured its ID.
+      operationId: replaceBrandAsset
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+          font/woff2:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: The new immutable current asset.
+          headers:
+            x-request-id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandAsset'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/AccountSuspended'
+        '404':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '431':
+          $ref: '#/components/responses/RequestHeadersTooLarge'
+      tags:
+      - Brand Kits
+    servers:
+    - url: https://thirds.ai
+components:
+  responses:
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    BrandAsset:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/BrandAssetId'
+        kind:
+          type: string
+          enum:
+          - logo
+          - font
+        media_type:
+          type: string
+          enum:
+          - image/png
+          - image/jpeg
+          - image/webp
+          - font/woff2
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - kind
+      - media_type
+      - byte_size
+      - created_at
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    BrandKitDetail:
+      type: object
+      properties:
+        archive_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchivePeriod'
+        id:
+          $ref: '#/components/schemas/BrandKitId'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9a-f]{6}$
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        archived_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        assets:
+          type: array
+          maxItems: 16
+          items:
+            $ref: '#/components/schemas/BrandAsset'
+      required:
+      - archive_history
+      - id
+      - name
+      - colours
+      - tone_guidance
+      - created_at
+      - updated_at
+      - archived_at
+      - assets
+      additionalProperties: false
+    BrandAssetId:
+      type: string
+      pattern: ^asset_[0-9a-f]{32}$
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    BrandKitWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9A-Fa-f]{6}$
+          default: []
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+      required:
+      - name
+      additionalProperties: false
+    BrandKitPatch:
+      type: object
+      properties:
+        archived_at:
+          type: 'null'
+          description: Restore the item. Omit this field to keep its archive state.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9A-Fa-f]{6}$
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+      minProperties: 1
+      additionalProperties: false
+    ArchivePeriod:
+      type: object
+      properties:
+        archived_at:
+          type: string
+          format: date-time
+        restored_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - archived_at
+      - restored_at
+      additionalProperties: false
+    BrandKitId:
+      type: string
+      pattern: ^kit_[0-9a-f]{32}$
+    BrandKitPage:
+      type: object
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BrandKitSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    BrandKitSummary:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/BrandKitId'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9a-f]{6}$
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        archived_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        assets:
+          type: array
+          maxItems: 16
+          items:
+            $ref: '#/components/schemas/BrandAsset'
+      required:
+      - id
+      - name
+      - colours
+      - tone_guidance
+      - created_at
+      - updated_at
+      - archived_at
+      - assets
+      additionalProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    ErrorEnvelope:
+      type: object
+      description: The one error shape every backend response uses.
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+              - account_suspended
+              - account_concurrency_limited
+              - abuse_limited
+              - ai_failure_limit_reached
+              - ai_needs_paid_credits
+              - already_subscribed
+              - auth_unavailable
+              - batch_row_limit
+              - billing_unavailable
+              - brand_asset_account_limit_reached
+              - brand_asset_invalid
+              - brand_asset_kind_invalid
+              - brand_asset_kind_mismatch
+              - brand_asset_limit_reached
+              - brand_asset_too_large
+              - brand_asset_type_unsupported
+              - brand_data_conflict
+              - brand_font_glyphs_exceeded
+              - brand_font_tables_invalid
+              - brand_image_animated
+              - brand_image_dimensions_invalid
+              - brand_image_pixels_exceeded
+              - brand_kit_colours_invalid
+              - brand_kit_conflict
+              - brand_kit_limit
+              - brand_kit_name_invalid
+              - brand_kit_not_found
+              - brand_kit_patch_empty
+              - brand_kit_tone_invalid
+              - brand_kit_unavailable
+              - captcha_rejected
+              - checkout_superseded
+              - cross_origin_rejected
+              - csrf_rejected
+              - download_expired
+              - email_already_set
+              - gallery_template_not_found
+              - generated_template_invalid
+              - idempotency_conflict
+              - image_asset_header_unsupported
+              - image_asset_invalid
+              - image_asset_limit
+              - image_asset_not_found
+              - image_asset_reference_invalid
+              - image_asset_too_large
+              - image_asset_type_unsupported
+              - image_asset_unavailable
+              - image_url_invalid
+              - image_url_unavailable
+              - insufficient_credits
+              - internal_error
+              - invalid_cursor
+              - invalid_email
+              - invalid_event
+              - invalid_link
+              - invalid_profile
+              - invalid_request
+              - invalid_upload
+              - job_not_finished
+              - key_concurrency_limited
+              - key_limit_reached
+              - method_not_allowed
+              - no_billing_customer
+              - not_found
+              - operation_conflict
+              - operation_limit_exceeded
+              - operation_pending
+              - overage_limit_reached
+              - overage_unavailable
+              - overloaded
+              - playground_busy
+              - playground_request_invalid
+              - playground_selection_invalid
+              - playground_session_limited
+              - playground_unavailable
+              - policy_version_stale
+              - provider_unavailable
+              - rate_limited
+              - render_probe_busy
+              - render_probe_failed
+              - render_probe_not_configured
+              - render_probe_required
+              - render_probe_timeout
+              - request_headers_too_large
+              - request_too_large
+              - resize_timeout
+              - signed_out
+              - spend_cap_reached
+              - template_build_not_found
+              - template_data_collection_limit
+              - template_data_depth_limit
+              - template_data_invalid
+              - template_data_limit
+              - template_depth_limit
+              - template_draft_not_found
+              - template_evaluation_error
+              - template_invalid_filter_input
+              - template_missing_data
+              - template_output_limit
+              - template_not_found
+              - template_schema_complexity
+              - template_schema_draft_unsupported
+              - template_schema_invalid
+              - template_schema_too_large
+              - template_size_canvas_mismatch
+              - template_size_data_overrides_too_large
+              - template_size_duplicate_id
+              - template_size_invalid_dimensions
+              - template_size_invalid_id
+              - template_size_invalid_name
+              - template_sizes_too_large
+              - template_sizes_too_many
+              - template_source_limit
+              - template_syntax_error
+              - template_timeout
+              - template_version_changed
+              - template_work_limit
+              - testimonial_busy
+              - testimonial_invalid
+              - testimonial_rate_limited
+              - testimonial_unavailable
+              - unauthorized
+              - unsupported_media_type
+              - webhook_limit_reached
+              description: A fixed, machine-readable error code.
+            message:
+              type: string
+              description: A fixed, human-readable message.
+            request_id:
+              type: string
+              format: uuid
+              description: The identifier this answer also carries in its x-request-id header.
+            details:
+              type: array
+              description: Present on a validation failure. Schema failures return at most 16 entries with bounded data paths and fixed reasons. Values from the request are never repeated.
+              items:
+                $ref: '#/components/schemas/FieldDetail'
+            retry:
+              $ref: '#/components/schemas/RetryInfo'
+            plan_limit:
+              $ref: '#/components/schemas/PlanLimitInfo'
+          required:
+          - code
+          - message
+          - request_id
+          additionalProperties: false
+      required:
+      - error
+      additionalProperties: false
+  headers:
+    XRequestId:
+      description: The UUID that identifies this request and matches error.request_id on an error response.
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-thirds_session
+      description: A browser session. Browser writes also require the matching x-csrf-token header from GET /v1/me.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
+x-refined-from:
+- thirds-ai-openapi.json
+- thirds-ai-openapi.yml
+x-unmatched-v1-responses:
+  description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
+  '404':
+    $ref: '#/components/responses/NotFound'
+  '431':
+    $ref: '#/components/responses/RequestHeadersTooLarge'

@@ -16,7 +16,7 @@ tags:
 - Branded Content
 - Developer Tools
 - MCP Server
-- agent-native
+- Agent-Native
 - marketing-ops
 tags_raw:
 - pdf-automation
@@ -31,54 +31,11 @@ tags_raw:
 - agent-native
 - marketing-ops
 apis:
-- name: thirds.ai REST API
-  description: REST API for HTML-to-PDF, HTML-to-image, AI template generation, template editing, brand kits, rendering,
-    and batch operations. Bearer API key auth with idempotency support.
-  humanURL: https://thirds.ai/docs/api-reference
-  baseURL: https://thirds.ai/v1
-  tags:
-  - pdf-automation
-  - image-automation
-  - Document Generation
-  - HTML to PDF
-  - HTML to Image
-  - template-rendering
-  - Branded Content
-  - Developer Tools
-  - MCP Server
-  - agent-native
-  - marketing-ops
-  tags_raw:
-  - pdf-automation
-  - image-automation
-  - document-generation
-  - html-to-pdf
-  - html-to-image
-  - template-rendering
-  - branded-content
-  - developer-tools
-  - mcp-server
-  - agent-native
-  - marketing-ops
-  properties:
-  - type: OpenAPI
-    url: openapi/thirds-ai-openapi.yml
-  - type: OpenAPI
-    url: https://thirds.ai/v1/openapi.json
-  - type: Documentation
-    url: https://thirds.ai/docs
-  - type: LLMsTxt
-    url: https://thirds.ai/llms.txt
-  - type: Overlay
-    url: overlays/thirds-ai-openapi-overlay.yaml
-  - type: APIReference
-    url: https://thirds.ai/docs/api-reference
-  - type: GettingStarted
-    url: https://thirds.ai/docs/quickstart
 - name: thirds.ai MCP Server
-  description: Hosted MCP server exposing thirds.ai tools (create_brand_kit, create_template, edit_template, publish_template,
-    render, create_batch, get_status, and more) over Streamable HTTP with bearer-token auth. Uses your existing
-    account, credits, and templates.
+  description: >-
+    Hosted MCP server exposing thirds.ai tools (create_brand_kit, create_template, edit_template, publish_template,
+    render, create_batch, get_status, and more) over Streamable HTTP with bearer-token auth. Uses your
+    existing account, credits, and templates.
   humanURL: https://thirds.ai/docs/mcp
   baseURL: https://thirds.ai/mcp
   tags:
@@ -91,7 +48,7 @@ apis:
   - Branded Content
   - Developer Tools
   - MCP Server
-  - agent-native
+  - Agent-Native
   - marketing-ops
   tags_raw:
   - pdf-automation
@@ -116,6 +73,294 @@ apis:
     url: https://thirds.ai/llms.txt
   - type: ToolCrosswalk
     url: mcp/thirds-ai-tool-crosswalk.yml
+- aid: thirds-ai:thirds-ai-batches-api
+  name: thirds.ai Batches API
+  description: The Batches API from thirds.ai — 5 operation(s) for batches.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Batches
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-batches-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-brand-kits-api
+  name: thirds.ai Brand Kits API
+  description: The Brand Kits API from thirds.ai — 4 operation(s) for brand kits.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Brand Kits
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-brand-kits-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-carousels-api
+  name: thirds.ai Carousels API
+  description: The Carousels API from thirds.ai — 4 operation(s) for carousels.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Carousels
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-carousels-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-downloads-api
+  name: thirds.ai Downloads API
+  description: The Downloads API from thirds.ai — 1 operation(s) for downloads.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Downloads
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-downloads-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-image-api
+  name: thirds.ai Image API
+  description: The Image API from thirds.ai — 2 operation(s) for image.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Image
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-image-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-image-assets-api
+  name: thirds.ai Image Assets API
+  description: The Image Assets API from thirds.ai — 3 operation(s) for image assets.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Image Assets
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-image-assets-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-image-packs-api
+  name: thirds.ai Image Packs API
+  description: The Image Packs API from thirds.ai — 4 operation(s) for image packs.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Image Packs
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-image-packs-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-keys-api
+  name: thirds.ai Keys API
+  description: The Keys API from thirds.ai — 2 operation(s) for keys.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Keys
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-keys-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-me-api
+  name: thirds.ai Me API
+  description: The Me API from thirds.ai — 1 operation(s) for me.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Me
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-me-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-openapi-json-api
+  name: thirds.ai Openapi.json API
+  description: The Openapi.json API from thirds.ai — 1 operation(s) for openapi.json.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Openapi.json
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-openapi-json-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-pdf-api
+  name: thirds.ai PDF API
+  description: The Pdf API from thirds.ai — 2 operation(s) for pdf.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Pdf
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-pdf-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-public-stats-api
+  name: thirds.ai Public Stats API
+  description: The Public Stats API from thirds.ai — 1 operation(s) for public stats.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Public Stats
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-public-stats-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-template-builds-api
+  name: thirds.ai Template Builds API
+  description: The Template Builds API from thirds.ai — 7 operation(s) for template builds.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Template Builds
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-template-builds-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-templates-api
+  name: thirds.ai Templates API
+  description: The Templates API from thirds.ai — 6 operation(s) for templates.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Templates
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-templates-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-testimonials-api
+  name: thirds.ai Testimonials API
+  description: The Testimonials API from thirds.ai — 1 operation(s) for testimonials.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Testimonials
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-testimonials-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
+- aid: thirds-ai:thirds-ai-webhooks-api
+  name: thirds.ai Webhooks API
+  description: The Webhooks API from thirds.ai — 8 operation(s) for webhooks.
+  humanURL: https://thirds.ai/docs/api-reference
+  baseURL: https://thirds.ai/v1
+  tags:
+  - Webhooks
+  properties:
+  - type: OpenAPI
+    url: openapi/thirds-ai-webhooks-api-openapi.yml
+  - type: Documentation
+    url: https://thirds.ai/docs
+  - type: LLMsTxt
+    url: https://thirds.ai/llms.txt
+  - type: APIReference
+    url: https://thirds.ai/docs/api-reference
+  - type: GettingStarted
+    url: https://thirds.ai/docs/quickstart
 maintainers:
 - FN: thirds.ai
   url: https://thirds.ai
@@ -126,6 +371,8 @@ generated:
   confidence: 96
   at: '2026-09-18T09:14:04.214Z'
 common:
+- type: Overlay
+  url: overlays/thirds-ai-openapi-overlay.yaml
 - type: DomainSecurity
   url: security/thirds-ai-domain-security.yml
 - type: Authentication
