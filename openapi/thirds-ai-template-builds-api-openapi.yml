@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Thirds Ai Template Builds API
+  title: thirds.ai Template Builds API
   version: 1.0.0
-  description: 'Operations tagged Template Builds across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+  description: Turn one design into content at scale. Create branded images and PDFs for your campaigns and clients. Automate each new version through our API or your AI tools. Render saved templates with new data, or send HTML directly. Every error uses one envelope, every response carries an x-request-id header, and every JSON request body rejects fields it does not expect.
 servers:
 - url: https://thirds.ai
 tags:
@@ -71,8 +71,6 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
   /v1/template-builds/{build_id}:
     parameters:
     - name: build_id
@@ -109,8 +107,6 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
   /v1/template-builds/{build_id}/messages:
     parameters:
     - name: build_id
@@ -212,8 +208,6 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
   /v1/template-builds/{build_id}/draft:
     parameters:
     - name: build_id
@@ -251,8 +245,6 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
   /v1/template-builds/{build_id}/messages/{message_id}/draft:
     parameters:
     - name: build_id
@@ -295,8 +287,6 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
   /v1/template-builds/{build_id}/messages/{message_id}:
     parameters:
     - name: build_id
@@ -340,8 +330,6 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
   /v1/template-builds/{build_id}/publish:
     parameters:
     - name: build_id
@@ -392,94 +380,17 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Template Builds
-    servers:
-    - url: https://thirds.ai
 components:
   schemas:
-    TemplateOutput:
-      oneOf:
-      - type: object
-        properties:
-          type:
-            const: pdf
-        required:
-        - type
-        additionalProperties: false
-      - type: object
-        properties:
-          type:
-            const: image
-          format:
-            type: string
-            enum:
-            - png
-            - jpeg
-            - webp
-          width:
-            type: integer
-            minimum: 320
-            maximum: 7680
-          height:
-            type: integer
-            minimum: 200
-            maximum: 4320
-        required:
-        - type
-        - format
-        - width
-        - height
-        additionalProperties: false
-    TemplatePublication:
+    TemplateMessageCreate:
       type: object
       properties:
-        template_id:
-          $ref: '#/components/schemas/TemplateId'
-        version:
-          type: integer
-          minimum: 1
+        input:
+          $ref: '#/components/schemas/TemplateBuildInput'
+        output:
+          $ref: '#/components/schemas/TemplateOutputIntent'
       required:
-      - template_id
-      - version
-      additionalProperties: false
-    FieldDetail:
-      type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
-      properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
-          type: string
-          enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
-      required:
-      - field
-      - reason
+      - input
       additionalProperties: false
     TemplateBuild:
       type: object
@@ -508,34 +419,6 @@ components:
       - published_template_id
       - message
       additionalProperties: false
-    TemplateBuildCreate:
-      type: object
-      properties:
-        brand_kit_id:
-          $ref: '#/components/schemas/BrandKitId'
-        input:
-          $ref: '#/components/schemas/TemplateBuildInput'
-        input_mode:
-          type: string
-          enum:
-          - blank
-          - html
-          description: How new manual work starts. Only source input accepts this field. Omit it when the source comes from a saved template or an existing chat.
-        output:
-          $ref: '#/components/schemas/TemplateOutputIntent'
-      required:
-      - brand_kit_id
-      - input
-      if:
-        required:
-        - input_mode
-      then:
-        properties:
-          input:
-            properties:
-              type:
-                const: source
-      additionalProperties: false
     PlanLimitInfo:
       type: object
       description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
@@ -557,138 +440,6 @@ components:
       - plan
       - limit
       additionalProperties: false
-    TemplateBuildInput:
-      oneOf:
-      - type: object
-        properties:
-          type:
-            const: prompt
-          prompt:
-            type: string
-            minLength: 1
-            maxLength: 65536
-        required:
-        - type
-        - prompt
-        additionalProperties: false
-      - type: object
-        properties:
-          type:
-            const: html
-          html:
-            type: string
-            minLength: 1
-            maxLength: 65536
-        required:
-        - type
-        - html
-        additionalProperties: false
-      - type: object
-        description: Rebuild a still PNG, JPEG, or WebP as an editable branded template. Inspired by the source, not a pixel copy. At most 10 MiB, 7680 by 4320, and 32 million pixels. An invalid file fails before the model.
-        properties:
-          type:
-            const: image
-          base64:
-            type: string
-            minLength: 1
-            maxLength: 13981016
-            contentEncoding: base64
-        required:
-        - type
-        - base64
-        additionalProperties: false
-      - type: object
-        description: Your own working template, sent as data. It must pass the saved-template checks and evaluate with sample_data. It becomes the draft without a model call and costs 0 credits.
-        properties:
-          type:
-            const: source
-          source:
-            type: string
-            minLength: 1
-            maxLength: 1048576
-          sample_data:
-            type: object
-          schema:
-            oneOf:
-            - type: object
-            - type: boolean
-        required:
-        - type
-        - source
-        additionalProperties: false
-    TemplateMessageId:
-      type: string
-      pattern: ^msg_[0-9a-f]{32}$
-    TemplateMessageCreate:
-      type: object
-      properties:
-        input:
-          $ref: '#/components/schemas/TemplateBuildInput'
-        output:
-          $ref: '#/components/schemas/TemplateOutputIntent'
-      required:
-      - input
-      additionalProperties: false
-    TemplateBuildDraft:
-      type: object
-      properties:
-        source:
-          type: string
-          maxLength: 1048576
-        sample_data:
-          type: object
-        schema: {}
-        output:
-          $ref: '#/components/schemas/TemplateOutput'
-      required:
-      - source
-      - sample_data
-      - schema
-      - output
-      additionalProperties: false
-    TemplateOutputIntent:
-      oneOf:
-      - type: object
-        description: Let the model choose PDF or image from the message. An image result from a source image uses the source dimensions.
-        properties:
-          type:
-            const: auto
-        required:
-        - type
-        additionalProperties: false
-      - type: object
-        properties:
-          type:
-            const: pdf
-        required:
-        - type
-        additionalProperties: false
-      - type: object
-        description: Request an image. Set both width and height to override the source dimensions. Without a source image, omitted dimensions use 1200 by 628.
-        properties:
-          type:
-            const: image
-          format:
-            type: string
-            enum:
-            - png
-            - jpeg
-            - webp
-            default: png
-          width:
-            type: integer
-            minimum: 320
-            maximum: 7680
-          height:
-            type: integer
-            minimum: 200
-            maximum: 4320
-        required:
-        - type
-        additionalProperties: false
-    BrandKitId:
-      type: string
-      pattern: ^kit_[0-9a-f]{32}$
     TemplateMessage:
       type: object
       properties:
@@ -787,12 +538,101 @@ components:
       required:
       - retry_after_seconds
       additionalProperties: false
-    TemplateId:
-      type: string
-      pattern: ^tpl_[0-9a-f]{32}$
+    TemplatePublication:
+      type: object
+      properties:
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - template_id
+      - version
+      additionalProperties: false
+    TemplateOutputIntent:
+      oneOf:
+      - type: object
+        description: Let the model choose PDF or image from the message. An image result from a source image uses the source dimensions.
+        properties:
+          type:
+            const: auto
+        required:
+        - type
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: pdf
+        required:
+        - type
+        additionalProperties: false
+      - type: object
+        description: Request an image. Set both width and height to override the source dimensions. Without a source image, omitted dimensions use 1200 by 628.
+        properties:
+          type:
+            const: image
+          format:
+            type: string
+            enum:
+            - png
+            - jpeg
+            - webp
+            default: png
+          width:
+            type: integer
+            minimum: 320
+            maximum: 7680
+          height:
+            type: integer
+            minimum: 200
+            maximum: 4320
+        required:
+        - type
+        additionalProperties: false
     TemplateBuildId:
       type: string
       pattern: ^build_[0-9a-f]{32}$
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -952,16 +792,153 @@ components:
       required:
       - error
       additionalProperties: false
-  responses:
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    TemplateOutput:
+      oneOf:
+      - type: object
+        properties:
+          type:
+            const: pdf
+        required:
+        - type
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: image
+          format:
+            type: string
+            enum:
+            - png
+            - jpeg
+            - webp
+          width:
+            type: integer
+            minimum: 320
+            maximum: 7680
+          height:
+            type: integer
+            minimum: 200
+            maximum: 4320
+        required:
+        - type
+        - format
+        - width
+        - height
+        additionalProperties: false
+    TemplateBuildCreate:
+      type: object
+      properties:
+        brand_kit_id:
+          $ref: '#/components/schemas/BrandKitId'
+        input:
+          $ref: '#/components/schemas/TemplateBuildInput'
+        input_mode:
+          type: string
+          enum:
+          - blank
+          - html
+          description: How new manual work starts. Only source input accepts this field. Omit it when the source comes from a saved template or an existing chat.
+        output:
+          $ref: '#/components/schemas/TemplateOutputIntent'
+      required:
+      - brand_kit_id
+      - input
+      if:
+        required:
+        - input_mode
+      then:
+        properties:
+          input:
+            properties:
+              type:
+                const: source
+      additionalProperties: false
+    TemplateBuildInput:
+      oneOf:
+      - type: object
+        properties:
+          type:
+            const: prompt
+          prompt:
+            type: string
+            minLength: 1
+            maxLength: 65536
+        required:
+        - type
+        - prompt
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: html
+          html:
+            type: string
+            minLength: 1
+            maxLength: 65536
+        required:
+        - type
+        - html
+        additionalProperties: false
+      - type: object
+        description: Rebuild a still PNG, JPEG, or WebP as an editable branded template. Inspired by the source, not a pixel copy. At most 10 MiB, 7680 by 4320, and 32 million pixels. An invalid file fails before the model.
+        properties:
+          type:
+            const: image
+          base64:
+            type: string
+            minLength: 1
+            maxLength: 13981016
+            contentEncoding: base64
+        required:
+        - type
+        - base64
+        additionalProperties: false
+      - type: object
+        description: Your own working template, sent as data. It must pass the saved-template checks and evaluate with sample_data. It becomes the draft without a model call and costs 0 credits.
+        properties:
+          type:
+            const: source
+          source:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+          sample_data:
+            type: object
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            oneOf:
+            - type: object
+            - type: boolean
+        required:
+        - type
+        - source
+        additionalProperties: false
+    BrandKitId:
+      type: string
+      pattern: ^kit_[0-9a-f]{32}$
+    TemplateMessageId:
+      type: string
+      pattern: ^msg_[0-9a-f]{32}$
+    TemplateBuildDraft:
+      type: object
+      properties:
+        source:
+          type: string
+          maxLength: 1048576
+        sample_data:
+          type: object
+        schema: {}
+        output:
+          $ref: '#/components/schemas/TemplateOutput'
+      required:
+      - source
+      - sample_data
+      - schema
+      - output
+      additionalProperties: false
+  responses:
     AccountSuspended:
       description: The authenticated account is suspended. The code is account_suspended.
       headers:
@@ -971,8 +948,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    Error:
-      description: The one error envelope every backend response uses.
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -982,6 +959,15 @@ components:
             $ref: '#/components/schemas/ErrorEnvelope'
     RequestHeadersTooLarge:
       description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -1006,9 +992,6 @@ components:
       type: http
       scheme: bearer
       description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
-x-refined-from:
-- thirds-ai-openapi.json
-- thirds-ai-openapi.yml
 x-unmatched-v1-responses:
   description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
   '404':

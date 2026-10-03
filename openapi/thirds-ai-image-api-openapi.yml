@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Thirds Ai Image API
+  title: thirds.ai Image API
   version: 1.0.0
-  description: 'Operations tagged Image across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+  description: Turn one design into content at scale. Create branded images and PDFs for your campaigns and clients. Automate each new version through our API or your AI tools. Render saved templates with new data, or send HTML directly. Every error uses one envelope, every response carries an x-request-id header, and every JSON request body rejects fields it does not expect.
 servers:
 - url: https://thirds.ai
 tags:
@@ -165,8 +165,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Image
-    servers:
-    - url: https://thirds.ai
   /v1/image/{id}:
     parameters:
     - name: id
@@ -236,30 +234,10 @@ paths:
           $ref: '#/components/responses/RequestHeadersTooLarge'
       tags:
       - Image
-    servers:
-    - url: https://thirds.ai
 components:
   responses:
     RequestHeadersTooLarge:
       description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Error:
-      description: The one error envelope every backend response uses.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -276,490 +254,25 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    ImageRequestCommon:
-      type: object
-      properties:
-        filename:
-          type: string
-          minLength: 1
-          maxLength: 120
-          pattern: ^(?!.* $)(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9 ._-]*$
-          description: Download name. Surrounding spaces are refused. The server uses the real output extension. Omit it for a safe template-name and UTC creation-date name, or html-render and date for HTML.
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
-          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
-        brand_kit_id:
-          type:
-          - string
-          - 'null'
-          pattern: ^kit_[a-f0-9]{32}$
-          description: Select an owned active brand kit. This uses template evaluation and its 1 MiB source and data limits even when data is omitted. Overrides the source thirds-brand-kit meta default. Supplies reserved brand.name, brand.palette, brand.colours.primary/secondary/accent, brand.logo, brand.logos, and brand.fonts entries with family and src. data.brand is refused when a kit is selected. Only present palette roles and logos are supplied. Assets are captured before enqueue. Schemas validate customer data before brand is added.
-        image:
-          type: object
-          properties:
-            format:
-              type: string
-              enum:
-              - png
-              - jpeg
-              - webp
-            width:
-              type: integer
-              minimum: 320
-              maximum: 7680
-              default: 1280
-            height:
-              type: integer
-              minimum: 200
-              maximum: 4320
-              default: 720
-            quality:
-              type: integer
-              minimum: 1
-              maximum: 100
-            transparent:
-              type: boolean
-              default: false
-          required:
-          - format
-          allOf:
-          - if:
-              properties:
-                format:
-                  const: png
-            then:
-              not:
-                required:
-                - quality
-            else:
-              properties:
-                quality:
-                  default: 80
-          - if:
-              properties:
-                format:
-                  const: jpeg
-            then:
-              properties:
-                transparent:
-                  const: false
-          additionalProperties: false
-        javascript:
-          type: object
-          properties:
-            mode:
-              type: string
-              enum:
-              - disabled
-              - enabled
-          additionalProperties: false
-        wait:
-          type: boolean
-          default: true
-      required:
-      - image
-    ImageRequest:
-      oneOf:
-      - $ref: '#/components/schemas/RawImageRequest'
-      - $ref: '#/components/schemas/StatelessTemplateImageRequest'
-      - $ref: '#/components/schemas/SavedTemplateImageRequest'
-    ImageHistoryItem:
-      type: object
-      description: One job in a bounded account history — the subset of ImageJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
-      properties:
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
-          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
-        id:
-          type: string
-          pattern: ^image_[0-9a-f]{32}$
-        status:
-          type: string
-          enum:
-          - queued
-          - running
-          - succeeded
-          - failed
-          - cancelled
-        created_at:
-          type: string
-          format: date-time
-        finished_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        template:
-          type:
-          - object
-          - 'null'
-          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
-          properties:
-            id:
-              $ref: '#/components/schemas/TemplateId'
-            version:
-              type: integer
-              minimum: 1
-          required:
-          - id
-          - version
-          additionalProperties: false
-        credit:
-          type: string
-          enum:
-          - reserved
-          - settled
-          - released
-          - none
-          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
-        artifact:
-          type:
-          - object
-          - 'null'
-          properties:
-            media_type:
-              type: string
-              enum:
-              - image/png
-              - image/jpeg
-              - image/webp
-            byte_size:
-              type: integer
-              minimum: 0
-            sha256:
-              type: string
-              pattern: ^[0-9a-f]{64}$
-            expires_at:
-              type: string
-              format: date-time
-              description: When retention ends and the file stops being served.
-            removed_reason:
-              type:
-              - string
-              - 'null'
-              enum:
-              - expired
-              - deleted
-              - null
-          required:
-          - media_type
-          - byte_size
-          - sha256
-          - expires_at
-          - removed_reason
-          additionalProperties: false
-        error:
-          type:
-          - object
-          - 'null'
-          properties:
-            category:
-              type: string
-              enum:
-              - invalid_input
-              - unsafe_asset
-              - resource_limit
-              - timeout
-              - renderer_failure
-              - internal_failure
-            code:
-              type: string
-          required:
-          - category
-          - code
-          additionalProperties: false
-      required:
-      - id
-      - status
-      - created_at
-      - finished_at
-      - template
-      - credit
-      - artifact
-      - error
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
-    RawImageRequest:
-      allOf:
-      - $ref: '#/components/schemas/ImageRequestCommon'
-      - type: object
-        properties:
-          html:
-            type: string
-            minLength: 1
-            maxLength: 5242880
-        required:
-        - html
-      unevaluatedProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
-      additionalProperties: false
-    ImageJob:
-      type: object
-      properties:
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
-          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
-        id:
-          type: string
-          pattern: ^image_[0-9a-f]{32}$
-        status:
-          type: string
-          enum:
-          - queued
-          - running
-          - succeeded
-          - failed
-          - cancelled
-        created_at:
-          type: string
-          format: date-time
-        finished_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        template:
-          type:
-          - object
-          - 'null'
-          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
-          properties:
-            id:
-              $ref: '#/components/schemas/TemplateId'
-            version:
-              type: integer
-              minimum: 1
-          required:
-          - id
-          - version
-          additionalProperties: false
-        credit:
-          type: string
-          enum:
-          - reserved
-          - settled
-          - released
-          - none
-          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
-        artifact:
-          type:
-          - object
-          - 'null'
-          properties:
-            media_type:
-              type: string
-              enum:
-              - image/png
-              - image/jpeg
-              - image/webp
-            byte_size:
-              type: integer
-              minimum: 0
-            sha256:
-              type: string
-              pattern: ^[0-9a-f]{64}$
-            expires_at:
-              type: string
-              format: date-time
-              description: When retention ends and the file stops being served.
-            removed_reason:
-              type:
-              - string
-              - 'null'
-              enum:
-              - expired
-              - deleted
-              - null
-          required:
-          - media_type
-          - byte_size
-          - sha256
-          - expires_at
-          - removed_reason
-          additionalProperties: false
-        error:
-          type:
-          - object
-          - 'null'
-          properties:
-            category:
-              type: string
-              enum:
-              - invalid_input
-              - unsafe_asset
-              - resource_limit
-              - timeout
-              - renderer_failure
-              - internal_failure
-            code:
-              type: string
-          required:
-          - category
-          - code
-          additionalProperties: false
-        download:
-          type:
-          - object
-          - 'null'
-          properties:
-            url:
-              type: string
-            expires_at:
-              type: string
-              format: date-time
-          required:
-          - url
-          - expires_at
-          additionalProperties: false
-      required:
-      - id
-      - status
-      - created_at
-      - finished_at
-      - template
-      - credit
-      - artifact
-      - error
-      - download
-      additionalProperties: false
-    StatelessTemplateImageRequest:
-      allOf:
-      - $ref: '#/components/schemas/ImageRequestCommon'
-      - type: object
-        properties:
-          html:
-            type: string
-            minLength: 1
-            maxLength: 1048576
-          data:
-            type: object
-        required:
-        - html
-        - data
-      unevaluatedProperties: false
-    ImageHistoryPage:
-      type: object
-      description: One bounded page of an account's image history, newest first.
-      properties:
-        items:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/ImageHistoryItem'
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          maxLength: 128
-          description: Pass as the cursor query parameter to read the next page. Null on the last page.
-      required:
-      - items
-      - next_cursor
-      additionalProperties: false
-    TemplateId:
-      type: string
-      pattern: ^tpl_[0-9a-f]{32}$
-    SavedTemplateImageRequest:
-      allOf:
-      - $ref: '#/components/schemas/ImageRequestCommon'
-      - type: object
-        properties:
-          template_id:
-            $ref: '#/components/schemas/TemplateId'
-          version:
-            type: integer
-            minimum: 1
-          data:
-            type: object
-          size_id:
-            type:
-            - string
-            - 'null'
-            pattern: ^[a-z0-9][a-z0-9-]{0,39}$
-            description: Selects one saved size of the template instead of the original. The image width and height must match the size exactly.
-        required:
-        - template_id
-        - data
-      unevaluatedProperties: false
-    FieldDetail:
-      type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
-      properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
-          type: string
-          enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
-      required:
-      - field
-      - reason
-      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -919,6 +432,489 @@ components:
       required:
       - error
       additionalProperties: false
+    RawImageRequest:
+      allOf:
+      - $ref: '#/components/schemas/ImageRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 5242880
+        required:
+        - html
+      unevaluatedProperties: false
+    ImageHistoryItem:
+      type: object
+      description: One job in a bounded account history — the subset of ImageJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^image_[0-9a-f]{32}$
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          properties:
+            media_type:
+              type: string
+              enum:
+              - image/png
+              - image/jpeg
+              - image/webp
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      additionalProperties: false
+    SavedTemplateImageRequest:
+      allOf:
+      - $ref: '#/components/schemas/ImageRequestCommon'
+      - type: object
+        properties:
+          template_id:
+            $ref: '#/components/schemas/TemplateId'
+          version:
+            type: integer
+            minimum: 1
+          data:
+            type: object
+          size_id:
+            type:
+            - string
+            - 'null'
+            pattern: ^[a-z0-9][a-z0-9-]{0,39}$
+            description: Selects one saved size of the template instead of the original. The image width and height must match the size exactly.
+        required:
+        - template_id
+        - data
+      unevaluatedProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    ImageJob:
+      type: object
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^image_[0-9a-f]{32}$
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          properties:
+            media_type:
+              type: string
+              enum:
+              - image/png
+              - image/jpeg
+              - image/webp
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+        download:
+          type:
+          - object
+          - 'null'
+          properties:
+            url:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+          required:
+          - url
+          - expires_at
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      - download
+      additionalProperties: false
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    ImageHistoryPage:
+      type: object
+      description: One bounded page of an account's image history, newest first.
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ImageHistoryItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+          description: Pass as the cursor query parameter to read the next page. Null on the last page.
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    ImageRequestCommon:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: ^(?!.* $)(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9 ._-]*$
+          description: Download name. Surrounding spaces are refused. The server uses the real output extension. Omit it for a safe template-name and UTC creation-date name, or html-render and date for HTML.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        brand_kit_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^kit_[a-f0-9]{32}$
+          description: Select an owned active brand kit. This uses template evaluation and its 1 MiB source and data limits even when data is omitted. Overrides the source thirds-brand-kit meta default. Supplies reserved brand.name, brand.palette, brand.colours.primary/secondary/accent, brand.logo, brand.logos, and brand.fonts entries with family and src. data.brand is refused when a kit is selected. Only present palette roles and logos are supplied. Assets are captured before enqueue. Schemas validate customer data before brand is added.
+        image:
+          type: object
+          properties:
+            format:
+              type: string
+              enum:
+              - png
+              - jpeg
+              - webp
+            width:
+              type: integer
+              minimum: 320
+              maximum: 7680
+              default: 1280
+            height:
+              type: integer
+              minimum: 200
+              maximum: 4320
+              default: 720
+            quality:
+              type: integer
+              minimum: 1
+              maximum: 100
+            transparent:
+              type: boolean
+              default: false
+          required:
+          - format
+          allOf:
+          - if:
+              properties:
+                format:
+                  const: png
+            then:
+              not:
+                required:
+                - quality
+            else:
+              properties:
+                quality:
+                  default: 80
+          - if:
+              properties:
+                format:
+                  const: jpeg
+            then:
+              properties:
+                transparent:
+                  const: false
+          additionalProperties: false
+        javascript:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum:
+              - disabled
+              - enabled
+          additionalProperties: false
+        wait:
+          type: boolean
+          default: true
+      required:
+      - image
+    ImageRequest:
+      oneOf:
+      - $ref: '#/components/schemas/RawImageRequest'
+      - $ref: '#/components/schemas/StatelessTemplateImageRequest'
+      - $ref: '#/components/schemas/SavedTemplateImageRequest'
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    StatelessTemplateImageRequest:
+      allOf:
+      - $ref: '#/components/schemas/ImageRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+          data:
+            type: object
+        required:
+        - html
+        - data
+      unevaluatedProperties: false
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.
@@ -936,9 +932,6 @@ components:
       type: http
       scheme: bearer
       description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
-x-refined-from:
-- thirds-ai-openapi.json
-- thirds-ai-openapi.yml
 x-unmatched-v1-responses:
   description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
   '404':

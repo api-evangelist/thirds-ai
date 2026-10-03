@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Thirds Ai Webhooks API
+  title: thirds.ai Webhooks API
   version: 1.0.0
-  description: 'Operations tagged Webhooks across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+  description: Turn one design into content at scale. Create branded images and PDFs for your campaigns and clients. Automate each new version through our API or your AI tools. Render saved templates with new data, or send HTML directly. Every error uses one envelope, every response carries an x-request-id header, and every JSON request body rejects fields it does not expect.
 servers:
 - url: https://thirds.ai
 tags:
@@ -87,8 +87,6 @@ paths:
                 $ref: '#/components/schemas/WebhookTest'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks/{webhook_id}/deliveries:
     get:
       summary: Read recent webhook attempts
@@ -159,8 +157,6 @@ paths:
                 $ref: '#/components/schemas/WebhookDeliveryList'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks:
     post:
       summary: Register a webhook destination
@@ -296,8 +292,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks/{webhook_id}:
     get:
       summary: Read a webhook destination
@@ -421,8 +415,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks/{webhook_id}/rotate:
     post:
       summary: Rotate a webhook destination's signing secret
@@ -487,8 +479,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks/{webhook_id}/disable:
     post:
       summary: Disable a webhook destination
@@ -553,8 +543,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks/{webhook_id}/enable:
     post:
       summary: Enable a webhook destination
@@ -619,8 +607,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
   /v1/webhooks/{webhook_id}/replay:
     post:
       summary: Replay a webhook destination's failed events
@@ -685,75 +671,8 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Webhooks
-    servers:
-    - url: https://thirds.ai
 components:
-  responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    WebhookDelivery:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: ^wa_[0-9a-f]{32}$
-        event:
-          type: string
-          enum:
-          - render.succeeded
-          - render.failed
-          - render.cancelled
-        created_at:
-          type: string
-          format: date-time
-        status_code:
-          type:
-          - integer
-          - 'null'
-          minimum: 200
-          maximum: 599
-          description: Null when no HTTP status is received.
-        is_test:
-          type: boolean
-          description: True for a sample sent by the test action.
-        retry_count:
-          type: integer
-          minimum: 0
-          maximum: 7
-      required:
-      - id
-      - event
-      - created_at
-      - status_code
-      - retry_count
-      - is_test
-      additionalProperties: false
     WebhookTest:
       type: object
       properties:
@@ -768,63 +687,6 @@ components:
       required:
       - status_code
       - delivered
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
-    WebhookList:
-      type: object
-      description: Every webhook destination the account holds. The cap is ten, so the list is never paged.
-      properties:
-        data:
-          type: array
-          maxItems: 10
-          items:
-            $ref: '#/components/schemas/Webhook'
-      required:
-      - data
-      additionalProperties: false
-    WebhookWithSecret:
-      description: One webhook destination exactly as creation and rotation answer it. This is the only shape that ever carries the signing secret.
-      allOf:
-      - $ref: '#/components/schemas/WebhookFields'
-      - type: object
-        properties:
-          secret:
-            type: string
-            pattern: ^thirds_whsec_[0-9a-f]{64}$
-            description: 'The full signing secret: "thirds_whsec_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again; store it and verify every delivery''s Thirds-Signature header with it.'
-        required:
-        - secret
-      unevaluatedProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
       additionalProperties: false
     WebhookFields:
       type: object
@@ -896,97 +758,6 @@ components:
       - last_delivery_at
       - failure_count
       - previous_secret_expires_at
-    WebhookReplay:
-      type: object
-      description: What one replay request did.
-      properties:
-        replayed:
-          type: integer
-          minimum: 0
-          description: How many failed events returned to the queue with a fresh attempt budget.
-      required:
-      - replayed
-      additionalProperties: false
-    Webhook:
-      description: One webhook destination, without its signing secret.
-      allOf:
-      - $ref: '#/components/schemas/WebhookFields'
-      unevaluatedProperties: false
-    NewWebhook:
-      type: object
-      description: What creating a webhook destination needs.
-      properties:
-        url:
-          type: string
-          format: uri
-          maxLength: 2048
-          description: The HTTPS URL deliveries are sent to. It must use port 443, carry no credentials, and resolve to public addresses only; private, loopback, link-local, metadata, and reserved destinations are refused, at registration and again on every delivery connection.
-        events:
-          type: array
-          minItems: 1
-          maxItems: 3
-          uniqueItems: true
-          items:
-            type: string
-            enum:
-            - render.cancelled
-            - render.failed
-            - render.succeeded
-          description: The terminal render events this destination receives. A body without this field selects every event.
-      required:
-      - url
-      additionalProperties: false
-    WebhookDeliveryList:
-      type: object
-      properties:
-        data:
-          type: array
-          maxItems: 20
-          items:
-            $ref: '#/components/schemas/WebhookDelivery'
-      required:
-      - data
-      additionalProperties: false
-    FieldDetail:
-      type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
-      properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
-          type: string
-          enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
-      required:
-      - field
-      - reason
-      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -1146,6 +917,219 @@ components:
       required:
       - error
       additionalProperties: false
+    Webhook:
+      description: One webhook destination, without its signing secret.
+      allOf:
+      - $ref: '#/components/schemas/WebhookFields'
+      unevaluatedProperties: false
+    WebhookDelivery:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^wa_[0-9a-f]{32}$
+        event:
+          type: string
+          enum:
+          - render.succeeded
+          - render.failed
+          - render.cancelled
+        created_at:
+          type: string
+          format: date-time
+        status_code:
+          type:
+          - integer
+          - 'null'
+          minimum: 200
+          maximum: 599
+          description: Null when no HTTP status is received.
+        is_test:
+          type: boolean
+          description: True for a sample sent by the test action.
+        retry_count:
+          type: integer
+          minimum: 0
+          maximum: 7
+      required:
+      - id
+      - event
+      - created_at
+      - status_code
+      - retry_count
+      - is_test
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    WebhookList:
+      type: object
+      description: Every webhook destination the account holds. The cap is ten, so the list is never paged.
+      properties:
+        data:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/Webhook'
+      required:
+      - data
+      additionalProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    NewWebhook:
+      type: object
+      description: What creating a webhook destination needs.
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: The HTTPS URL deliveries are sent to. It must use port 443, carry no credentials, and resolve to public addresses only; private, loopback, link-local, metadata, and reserved destinations are refused, at registration and again on every delivery connection.
+        events:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - render.cancelled
+            - render.failed
+            - render.succeeded
+          description: The terminal render events this destination receives. A body without this field selects every event.
+      required:
+      - url
+      additionalProperties: false
+    WebhookDeliveryList:
+      type: object
+      properties:
+        data:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/WebhookDelivery'
+      required:
+      - data
+      additionalProperties: false
+    WebhookWithSecret:
+      description: One webhook destination exactly as creation and rotation answer it. This is the only shape that ever carries the signing secret.
+      allOf:
+      - $ref: '#/components/schemas/WebhookFields'
+      - type: object
+        properties:
+          secret:
+            type: string
+            pattern: ^thirds_whsec_[0-9a-f]{64}$
+            description: 'The full signing secret: "thirds_whsec_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again; store it and verify every delivery''s Thirds-Signature header with it.'
+        required:
+        - secret
+      unevaluatedProperties: false
+    WebhookReplay:
+      type: object
+      description: What one replay request did.
+      properties:
+        replayed:
+          type: integer
+          minimum: 0
+          description: How many failed events returned to the queue with a fresh attempt budget.
+      required:
+      - replayed
+      additionalProperties: false
+  responses:
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.
@@ -1163,9 +1147,6 @@ components:
       type: http
       scheme: bearer
       description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
-x-refined-from:
-- thirds-ai-openapi.json
-- thirds-ai-openapi.yml
 x-unmatched-v1-responses:
   description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
   '404':

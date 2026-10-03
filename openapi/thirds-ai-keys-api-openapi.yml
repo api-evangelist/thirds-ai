@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Thirds Ai Keys API
+  title: thirds.ai Keys API
   version: 1.0.0
-  description: 'Operations tagged Keys across 2 of this provider''s published API definitions: thirds-ai-openapi.json, thirds-ai-openapi.yml. Each path carries the servers of the definition it was published in.'
+  description: Turn one design into content at scale. Create branded images and PDFs for your campaigns and clients. Automate each new version through our API or your AI tools. Render saved templates with new data, or send HTML directly. Every error uses one envelope, every response carries an x-request-id header, and every JSON request body rejects fields it does not expect.
 servers:
 - url: https://thirds.ai
 tags:
@@ -165,8 +165,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Keys
-    servers:
-    - url: https://thirds.ai
   /v1/keys/{key_id}:
     delete:
       summary: Revoke an API key
@@ -323,8 +321,6 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
       tags:
       - Keys
-    servers:
-    - url: https://thirds.ai
 components:
   schemas:
     ApiKeyList:
@@ -344,115 +340,6 @@ components:
       required:
       - data
       - next_cursor
-      additionalProperties: false
-    ApiKeyUpdate:
-      type: object
-      description: What an update may change about a key.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: ^(?=.*[!-~])[ -~]+$
-          description: New key name. The key secret and prefix stay the same.
-        monthly_overage_cap:
-          type:
-          - integer
-          - 'null'
-          minimum: 1
-          description: The most overage credits this key may take on per calendar month (UTC), or null to clear the cap. Omit it to keep the current cap.
-      additionalProperties: false
-    NewApiKey:
-      type: object
-      description: What a new key is named.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: ^(?=.*[^ ])[ -~]+$
-          description: 1 to 100 printable ASCII characters.
-      required:
-      - name
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
-      additionalProperties: false
-    ApiKey:
-      type: object
-      description: One key, without its secret.
-      properties:
-        id:
-          type: string
-          pattern: ^key_[0-9a-f]{32}$
-          description: 'The key''s public identifier: "key_" followed by 32 lowercase hexadecimal characters.'
-        name:
-          type: string
-        display_prefix:
-          type: string
-          description: The first characters of the secret, enough to tell keys apart in a list.
-        status:
-          type: string
-          enum:
-          - active
-          - revoked
-        created_at:
-          type: string
-          format: date-time
-        revoked_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        last_used_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        monthly_overage_cap:
-          type:
-          - integer
-          - 'null'
-          minimum: 1
-          description: The most overage credits this key may take on per calendar month (UTC). Null means the key sets no cap of its own.
-      required:
-      - id
-      - name
-      - display_prefix
-      - status
-      - created_at
-      - revoked_at
-      - last_used_at
-      - monthly_overage_cap
       additionalProperties: false
     ApiKeyWithSecret:
       type: object
@@ -485,46 +372,6 @@ components:
       - display_prefix
       - status
       - created_at
-      additionalProperties: false
-    FieldDetail:
-      type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
-      properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
-          type: string
-          enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
-      required:
-      - field
-      - reason
       additionalProperties: false
     ErrorEnvelope:
       type: object
@@ -685,6 +532,155 @@ components:
       required:
       - error
       additionalProperties: false
+    ApiKey:
+      type: object
+      description: One key, without its secret.
+      properties:
+        id:
+          type: string
+          pattern: ^key_[0-9a-f]{32}$
+          description: 'The key''s public identifier: "key_" followed by 32 lowercase hexadecimal characters.'
+        name:
+          type: string
+        display_prefix:
+          type: string
+          description: The first characters of the secret, enough to tell keys apart in a list.
+        status:
+          type: string
+          enum:
+          - active
+          - revoked
+        created_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        last_used_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        monthly_overage_cap:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          description: The most overage credits this key may take on per calendar month (UTC). Null means the key sets no cap of its own.
+      required:
+      - id
+      - name
+      - display_prefix
+      - status
+      - created_at
+      - revoked_at
+      - last_used_at
+      - monthly_overage_cap
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    NewApiKey:
+      type: object
+      description: What a new key is named.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^(?=.*[^ ])[ -~]+$
+          description: 1 to 100 printable ASCII characters.
+      required:
+      - name
+      additionalProperties: false
+    ApiKeyUpdate:
+      type: object
+      description: What an update may change about a key.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^(?=.*[!-~])[ -~]+$
+          description: New key name. The key secret and prefix stay the same.
+        monthly_overage_cap:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          description: The most overage credits this key may take on per calendar month (UTC), or null to clear the cap. Omit it to keep the current cap.
+      additionalProperties: false
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
   responses:
     RequestHeadersTooLarge:
       description: The request has more than 64 headers or more than 32 KiB of header names and values.
@@ -721,9 +717,6 @@ components:
       type: http
       scheme: bearer
       description: 'An API key''s secret, sent as "Authorization: Bearer thirds_sk_v1_...".'
-x-refined-from:
-- thirds-ai-openapi.json
-- thirds-ai-openapi.yml
 x-unmatched-v1-responses:
   description: A request below /v1 that matches no operation receives the shared safe envelope. OpenAPI has no standard path item for an unmatched route, so this extension records the fallback contract without claiming that a catch-all operation exists.
   '404':
