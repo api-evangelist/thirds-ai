@@ -259,6 +259,8 @@ apis:
   humanURL: https://thirds.ai/docs/api-reference
   baseURL: https://thirds.ai/v1
   tags:
+  - PDF
+  tags_raw:
   - Pdf
   properties:
   - type: OpenAPI
@@ -349,6 +351,8 @@ apis:
   humanURL: https://thirds.ai/docs/api-reference
   baseURL: https://thirds.ai/v1
   tags:
+  - Webhook
+  tags_raw:
   - Webhooks
   properties:
   - type: OpenAPI
@@ -371,6 +375,9 @@ generated:
   confidence: 96
   at: '2026-09-18T09:14:04.214Z'
 common:
+- type: CapabilityMap
+  url: capabilities/thirds-ai-capability-edges.yml
+  name: thirds.ai Business Capability Map
 - type: Overlay
   url: overlays/thirds-ai-openapi-overlay.yaml
 - type: DomainSecurity
