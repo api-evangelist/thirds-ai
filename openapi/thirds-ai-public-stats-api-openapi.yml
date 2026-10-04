@@ -37,8 +37,8 @@ paths:
       - Public Stats
 components:
   responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -46,8 +46,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -224,27 +224,6 @@ components:
       required:
       - error
       additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
     RetryInfo:
       type: object
       description: How long the caller must wait before it retries.
@@ -255,40 +234,6 @@ components:
           maximum: 60
       required:
       - retry_after_seconds
-      additionalProperties: false
-    PublicStats:
-      type: object
-      description: Measured facts shown on the public sales site.
-      properties:
-        renders_served:
-          type: integer
-          minimum: 0
-        gallery_templates:
-          type: integer
-          minimum: 0
-        uptime_percent:
-          type:
-          - number
-          - 'null'
-          minimum: 0
-          maximum: 100
-        uptime_days:
-          type: integer
-          minimum: 0
-        status:
-          type: string
-          enum:
-          - operational
-          - degraded
-          - downtime
-          - maintenance
-          - unavailable
-      required:
-      - renders_served
-      - gallery_templates
-      - uptime_percent
-      - uptime_days
-      - status
       additionalProperties: false
     FieldDetail:
       type: object
@@ -329,6 +274,61 @@ components:
       required:
       - field
       - reason
+      additionalProperties: false
+    PublicStats:
+      type: object
+      description: Measured facts shown on the public sales site.
+      properties:
+        renders_served:
+          type: integer
+          minimum: 0
+        gallery_templates:
+          type: integer
+          minimum: 0
+        uptime_percent:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 100
+        uptime_days:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum:
+          - operational
+          - degraded
+          - downtime
+          - maintenance
+          - unavailable
+      required:
+      - renders_served
+      - gallery_templates
+      - uptime_percent
+      - uptime_days
+      - status
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
       additionalProperties: false
   headers:
     XRequestId:

@@ -672,92 +672,93 @@ paths:
       tags:
       - Webhooks
 components:
+  responses:
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    WebhookTest:
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    WebhookDelivery:
       type: object
       properties:
+        id:
+          type: string
+          pattern: ^wa_[0-9a-f]{32}$
+        event:
+          type: string
+          enum:
+          - render.succeeded
+          - render.failed
+          - render.cancelled
+        created_at:
+          type: string
+          format: date-time
         status_code:
           type:
           - integer
           - 'null'
           minimum: 200
           maximum: 599
-        delivered:
+          description: Null when no HTTP status is received.
+        is_test:
           type: boolean
-      required:
-      - status_code
-      - delivered
-      additionalProperties: false
-    WebhookFields:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: ^wh_[0-9a-f]{32}$
-          description: 'The destination''s public identifier: "wh_" followed by 32 lowercase hexadecimal characters.'
-        url:
-          type: string
-          format: uri
-          maxLength: 2048
-        events:
-          type: array
-          minItems: 1
-          maxItems: 3
-          uniqueItems: true
-          items:
-            type: string
-            enum:
-            - render.cancelled
-            - render.failed
-            - render.succeeded
-          description: The selected events, always sorted and distinct.
-        status:
-          type: string
-          enum:
-          - enabled
-          - disabled
-        disabled_reason:
-          type:
-          - string
-          - 'null'
-          enum:
-          - owner_request
-          - delivery_failure
-          - null
-          description: 'Why a disabled destination is disabled: the owner asked, or delivery failed repeatedly. Null while the destination is enabled.'
-        display_prefix:
-          type: string
-          description: The first characters of the signing secret, enough to tell destinations apart in a list.
-        last_delivery_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-          description: Time of the most recent recorded attempt, including tests.
-        failure_count:
+          description: True for a sample sent by the test action.
+        retry_count:
           type: integer
           minimum: 0
-          description: Consecutive normal delivery failures. A success or enable resets it. Test events do not change it.
-        created_at:
-          type: string
-          format: date-time
-        previous_secret_expires_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-          description: 'Set while a rotation overlap is running: until this instant every delivery also carries a signature made with the previous secret.'
+          maximum: 7
       required:
       - id
-      - url
-      - events
-      - status
-      - disabled_reason
-      - display_prefix
+      - event
       - created_at
-      - last_delivery_at
-      - failure_count
-      - previous_secret_expires_at
+      - status_code
+      - retry_count
+      - is_test
+      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -917,68 +918,42 @@ components:
       required:
       - error
       additionalProperties: false
-    Webhook:
-      description: One webhook destination, without its signing secret.
+    WebhookWithSecret:
+      description: One webhook destination exactly as creation and rotation answer it. This is the only shape that ever carries the signing secret.
       allOf:
       - $ref: '#/components/schemas/WebhookFields'
+      - type: object
+        properties:
+          secret:
+            type: string
+            pattern: ^thirds_whsec_[0-9a-f]{64}$
+            description: 'The full signing secret: "thirds_whsec_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again; store it and verify every delivery''s Thirds-Signature header with it.'
+        required:
+        - secret
       unevaluatedProperties: false
-    WebhookDelivery:
+    NewWebhook:
       type: object
+      description: What creating a webhook destination needs.
       properties:
-        id:
+        url:
           type: string
-          pattern: ^wa_[0-9a-f]{32}$
-        event:
-          type: string
-          enum:
-          - render.succeeded
-          - render.failed
-          - render.cancelled
-        created_at:
-          type: string
-          format: date-time
-        status_code:
-          type:
-          - integer
-          - 'null'
-          minimum: 200
-          maximum: 599
-          description: Null when no HTTP status is received.
-        is_test:
-          type: boolean
-          description: True for a sample sent by the test action.
-        retry_count:
-          type: integer
-          minimum: 0
-          maximum: 7
+          format: uri
+          maxLength: 2048
+          description: The HTTPS URL deliveries are sent to. It must use port 443, carry no credentials, and resolve to public addresses only; private, loopback, link-local, metadata, and reserved destinations are refused, at registration and again on every delivery connection.
+        events:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - render.cancelled
+            - render.failed
+            - render.succeeded
+          description: The terminal render events this destination receives. A body without this field selects every event.
       required:
-      - id
-      - event
-      - created_at
-      - status_code
-      - retry_count
-      - is_test
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
+      - url
       additionalProperties: false
     WebhookList:
       type: object
@@ -991,6 +966,48 @@ components:
             $ref: '#/components/schemas/Webhook'
       required:
       - data
+      additionalProperties: false
+    WebhookTest:
+      type: object
+      properties:
+        status_code:
+          type:
+          - integer
+          - 'null'
+          minimum: 200
+          maximum: 599
+        delivered:
+          type: boolean
+      required:
+      - status_code
+      - delivered
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    Webhook:
+      description: One webhook destination, without its signing secret.
+      allOf:
+      - $ref: '#/components/schemas/WebhookFields'
+      unevaluatedProperties: false
+    WebhookReplay:
+      type: object
+      description: What one replay request did.
+      properties:
+        replayed:
+          type: integer
+          minimum: 0
+          description: How many failed events returned to the queue with a fresh attempt budget.
+      required:
+      - replayed
       additionalProperties: false
     FieldDetail:
       type: object
@@ -1032,41 +1049,6 @@ components:
       - field
       - reason
       additionalProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
-      additionalProperties: false
-    NewWebhook:
-      type: object
-      description: What creating a webhook destination needs.
-      properties:
-        url:
-          type: string
-          format: uri
-          maxLength: 2048
-          description: The HTTPS URL deliveries are sent to. It must use port 443, carry no credentials, and resolve to public addresses only; private, loopback, link-local, metadata, and reserved destinations are refused, at registration and again on every delivery connection.
-        events:
-          type: array
-          minItems: 1
-          maxItems: 3
-          uniqueItems: true
-          items:
-            type: string
-            enum:
-            - render.cancelled
-            - render.failed
-            - render.succeeded
-          description: The terminal render events this destination receives. A body without this field selects every event.
-      required:
-      - url
-      additionalProperties: false
     WebhookDeliveryList:
       type: object
       properties:
@@ -1078,58 +1060,76 @@ components:
       required:
       - data
       additionalProperties: false
-    WebhookWithSecret:
-      description: One webhook destination exactly as creation and rotation answer it. This is the only shape that ever carries the signing secret.
-      allOf:
-      - $ref: '#/components/schemas/WebhookFields'
-      - type: object
-        properties:
-          secret:
-            type: string
-            pattern: ^thirds_whsec_[0-9a-f]{64}$
-            description: 'The full signing secret: "thirds_whsec_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again; store it and verify every delivery''s Thirds-Signature header with it.'
-        required:
-        - secret
-      unevaluatedProperties: false
-    WebhookReplay:
+    WebhookFields:
       type: object
-      description: What one replay request did.
       properties:
-        replayed:
+        id:
+          type: string
+          pattern: ^wh_[0-9a-f]{32}$
+          description: 'The destination''s public identifier: "wh_" followed by 32 lowercase hexadecimal characters.'
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        events:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - render.cancelled
+            - render.failed
+            - render.succeeded
+          description: The selected events, always sorted and distinct.
+        status:
+          type: string
+          enum:
+          - enabled
+          - disabled
+        disabled_reason:
+          type:
+          - string
+          - 'null'
+          enum:
+          - owner_request
+          - delivery_failure
+          - null
+          description: 'Why a disabled destination is disabled: the owner asked, or delivery failed repeatedly. Null while the destination is enabled.'
+        display_prefix:
+          type: string
+          description: The first characters of the signing secret, enough to tell destinations apart in a list.
+        last_delivery_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: Time of the most recent recorded attempt, including tests.
+        failure_count:
           type: integer
           minimum: 0
-          description: How many failed events returned to the queue with a fresh attempt budget.
+          description: Consecutive normal delivery failures. A success or enable resets it. Test events do not change it.
+        created_at:
+          type: string
+          format: date-time
+        previous_secret_expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: 'Set while a rotation overlap is running: until this instant every delivery also carries a signature made with the previous secret.'
       required:
-      - replayed
-      additionalProperties: false
-  responses:
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+      - id
+      - url
+      - events
+      - status
+      - disabled_reason
+      - display_prefix
+      - created_at
+      - last_delivery_at
+      - failure_count
+      - previous_secret_expires_at
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.

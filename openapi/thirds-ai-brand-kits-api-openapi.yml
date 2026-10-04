@@ -380,8 +380,8 @@ paths:
       - Brand Kits
 components:
   responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -398,8 +398,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -417,6 +417,79 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
+    BrandKitSummary:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/BrandKitId'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9a-f]{6}$
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        archived_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        assets:
+          type: array
+          maxItems: 16
+          items:
+            $ref: '#/components/schemas/BrandAsset'
+      required:
+      - id
+      - name
+      - colours
+      - tone_guidance
+      - created_at
+      - updated_at
+      - archived_at
+      - assets
+      additionalProperties: false
+    BrandKitPatch:
+      type: object
+      properties:
+        archived_at:
+          type: 'null'
+          description: Restore the item. Omit this field to keep its archive state.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9A-Fa-f]{6}$
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+      minProperties: 1
+      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -576,145 +649,6 @@ components:
       required:
       - error
       additionalProperties: false
-    BrandKitWrite:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        colours:
-          type: array
-          maxItems: 16
-          uniqueItems: true
-          items:
-            type: string
-            pattern: ^#[0-9A-Fa-f]{6}$
-          default: []
-        tone_guidance:
-          type:
-          - string
-          - 'null'
-          minLength: 1
-          maxLength: 500
-      required:
-      - name
-      additionalProperties: false
-    ArchivePeriod:
-      type: object
-      properties:
-        archived_at:
-          type: string
-          format: date-time
-        restored_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-      required:
-      - archived_at
-      - restored_at
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
-    BrandAssetId:
-      type: string
-      pattern: ^asset_[0-9a-f]{32}$
-    BrandKitSummary:
-      type: object
-      properties:
-        id:
-          $ref: '#/components/schemas/BrandKitId'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        colours:
-          type: array
-          maxItems: 16
-          uniqueItems: true
-          items:
-            type: string
-            pattern: ^#[0-9a-f]{6}$
-        tone_guidance:
-          type:
-          - string
-          - 'null'
-          minLength: 1
-          maxLength: 500
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        archived_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        assets:
-          type: array
-          maxItems: 16
-          items:
-            $ref: '#/components/schemas/BrandAsset'
-      required:
-      - id
-      - name
-      - colours
-      - tone_guidance
-      - created_at
-      - updated_at
-      - archived_at
-      - assets
-      additionalProperties: false
-    BrandKitPage:
-      type: object
-      properties:
-        items:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/BrandKitSummary'
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          maxLength: 128
-      required:
-      - items
-      - next_cursor
-      additionalProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
-      additionalProperties: false
     BrandAsset:
       type: object
       properties:
@@ -746,6 +680,76 @@ components:
       - byte_size
       - created_at
       additionalProperties: false
+    BrandKitWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        colours:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items:
+            type: string
+            pattern: ^#[0-9A-Fa-f]{6}$
+          default: []
+        tone_guidance:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+      required:
+      - name
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    BrandKitPage:
+      type: object
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BrandKitSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    ArchivePeriod:
+      type: object
+      properties:
+        archived_at:
+          type: string
+          format: date-time
+        restored_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - archived_at
+      - restored_at
+      additionalProperties: false
+    BrandAssetId:
+      type: string
+      pattern: ^asset_[0-9a-f]{32}$
     BrandKitDetail:
       type: object
       properties:
@@ -799,34 +803,6 @@ components:
       - archived_at
       - assets
       additionalProperties: false
-    BrandKitPatch:
-      type: object
-      properties:
-        archived_at:
-          type: 'null'
-          description: Restore the item. Omit this field to keep its archive state.
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        colours:
-          type: array
-          maxItems: 16
-          uniqueItems: true
-          items:
-            type: string
-            pattern: ^#[0-9A-Fa-f]{6}$
-        tone_guidance:
-          type:
-          - string
-          - 'null'
-          minLength: 1
-          maxLength: 500
-      minProperties: 1
-      additionalProperties: false
-    BrandKitId:
-      type: string
-      pattern: ^kit_[0-9a-f]{32}$
     FieldDetail:
       type: object
       description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
@@ -866,6 +842,30 @@ components:
       required:
       - field
       - reason
+      additionalProperties: false
+    BrandKitId:
+      type: string
+      pattern: ^kit_[0-9a-f]{32}$
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
       additionalProperties: false
   headers:
     XRequestId:

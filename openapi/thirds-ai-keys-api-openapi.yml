@@ -322,57 +322,26 @@ paths:
       tags:
       - Keys
 components:
+  responses:
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    ApiKeyList:
-      type: object
-      description: One bounded page of the account's key history.
-      properties:
-        data:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/ApiKey'
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          maxLength: 128
-      required:
-      - data
-      - next_cursor
-      additionalProperties: false
-    ApiKeyWithSecret:
-      type: object
-      description: One key exactly as creation answers it. This is the only shape that ever carries the secret.
-      properties:
-        id:
-          type: string
-          pattern: ^key_[0-9a-f]{32}$
-          description: 'The key''s public identifier: "key_" followed by 32 lowercase hexadecimal characters.'
-        name:
-          type: string
-        secret:
-          type: string
-          pattern: ^thirds_sk_v1_[0-9a-f]{64}$
-          description: 'The full secret: "thirds_sk_v1_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again.'
-        display_prefix:
-          type: string
-          description: The first characters of the secret, enough to tell keys apart in a list.
-        status:
-          type: string
-          enum:
-          - active
-        created_at:
-          type: string
-          format: date-time
-      required:
-      - id
-      - name
-      - secret
-      - display_prefix
-      - status
-      - created_at
-      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -532,6 +501,19 @@ components:
       required:
       - error
       additionalProperties: false
+    NewApiKey:
+      type: object
+      description: What a new key is named.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^(?=.*[^ ])[ -~]+$
+          description: 1 to 100 printable ASCII characters.
+      required:
+      - name
+      additionalProperties: false
     ApiKey:
       type: object
       description: One key, without its secret.
@@ -579,26 +561,23 @@ components:
       - last_used_at
       - monthly_overage_cap
       additionalProperties: false
-    PlanLimitInfo:
+    ApiKeyList:
       type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      description: One bounded page of the account's key history.
       properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ApiKey'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
       required:
-      - plan
-      - limit
+      - data
+      - next_cursor
       additionalProperties: false
     RetryInfo:
       type: object
@@ -611,35 +590,37 @@ components:
       required:
       - retry_after_seconds
       additionalProperties: false
-    NewApiKey:
+    ApiKeyWithSecret:
       type: object
-      description: What a new key is named.
+      description: One key exactly as creation answers it. This is the only shape that ever carries the secret.
       properties:
+        id:
+          type: string
+          pattern: ^key_[0-9a-f]{32}$
+          description: 'The key''s public identifier: "key_" followed by 32 lowercase hexadecimal characters.'
         name:
           type: string
-          minLength: 1
-          maxLength: 100
-          pattern: ^(?=.*[^ ])[ -~]+$
-          description: 1 to 100 printable ASCII characters.
+        secret:
+          type: string
+          pattern: ^thirds_sk_v1_[0-9a-f]{64}$
+          description: 'The full secret: "thirds_sk_v1_" followed by 64 lowercase hexadecimal characters. It is shown here once and never again.'
+        display_prefix:
+          type: string
+          description: The first characters of the secret, enough to tell keys apart in a list.
+        status:
+          type: string
+          enum:
+          - active
+        created_at:
+          type: string
+          format: date-time
       required:
+      - id
       - name
-      additionalProperties: false
-    ApiKeyUpdate:
-      type: object
-      description: What an update may change about a key.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: ^(?=.*[!-~])[ -~]+$
-          description: New key name. The key secret and prefix stay the same.
-        monthly_overage_cap:
-          type:
-          - integer
-          - 'null'
-          minimum: 1
-          description: The most overage credits this key may take on per calendar month (UTC), or null to clear the cap. Omit it to keep the current cap.
+      - secret
+      - display_prefix
+      - status
+      - created_at
       additionalProperties: false
     FieldDetail:
       type: object
@@ -681,25 +662,44 @@ components:
       - field
       - reason
       additionalProperties: false
-  responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+    ApiKeyUpdate:
+      type: object
+      description: What an update may change about a key.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^(?=.*[!-~])[ -~]+$
+          description: New key name. The key secret and prefix stay the same.
+        monthly_overage_cap:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          description: The most overage credits this key may take on per calendar month (UTC), or null to clear the cap. Omit it to keep the current cap.
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.

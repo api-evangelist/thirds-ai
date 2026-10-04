@@ -254,62 +254,44 @@ paths:
       tags:
       - Batches
 components:
+  responses:
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    Batch:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: ^batch_[0-9a-f]{32}$
-        template_id:
-          $ref: '#/components/schemas/TemplateId'
-        version:
-          type: integer
-          minimum: 1
-        format:
-          type: string
-          enum:
-          - pdf
-          - png
-          - jpeg
-          - webp
-        created_at:
-          type: string
-          format: date-time
-        state:
-          type: string
-          enum:
-          - queued
-          - running
-          - complete
-          - partial
-          - failed
-          - cancelled
-        quoted_credits:
-          type: integer
-          minimum: 1
-          maximum: 200
-          description: The row count. Each successful file settles one credit. Failed and cancelled rows cost nothing. There is no bulk discount.
-        rows:
-          type: array
-          items:
-            $ref: '#/components/schemas/BatchRow'
-        archive_url:
-          type:
-          - string
-          - 'null'
-          description: A signed ZIP download link, present once any row has succeeded.
-      required:
-      - id
-      - template_id
-      - version
-      - format
-      - created_at
-      - state
-      - quoted_credits
-      - rows
-      - archive_url
-      additionalProperties: false
     ErrorEnvelope:
       type: object
       description: The one error shape every backend response uses.
@@ -469,89 +451,6 @@ components:
       required:
       - error
       additionalProperties: false
-    BatchRow:
-      type: object
-      properties:
-        position:
-          type: integer
-          minimum: 0
-        state:
-          type: string
-          enum:
-          - queued
-          - running
-          - succeeded
-          - failed
-          - cancelled
-        error:
-          type:
-          - object
-          - 'null'
-          properties:
-            code:
-              type: string
-          required:
-          - code
-          additionalProperties: false
-        download_url:
-          type:
-          - string
-          - 'null'
-      required:
-      - position
-      - state
-      - error
-      - download_url
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
-    BatchCreate:
-      type: object
-      properties:
-        template_id:
-          $ref: '#/components/schemas/TemplateId'
-        version:
-          type: integer
-          minimum: 1
-          description: Omitted to use the template's latest version at creation time. The batch pins that exact version.
-        format:
-          type: string
-          enum:
-          - pdf
-          - png
-          - jpeg
-          - webp
-        rows:
-          type: array
-          items:
-            type: object
-          minItems: 1
-          maxItems: 200
-          description: 1 to 200 JSON objects. Each object is one render. 200 is the system cap; the account plan can allow fewer. The CSV parser lives in the studio; this API accepts rows only.
-      required:
-      - template_id
-      - format
-      - rows
-      additionalProperties: false
     TemplateId:
       type: string
       pattern: ^tpl_[0-9a-f]{32}$
@@ -566,8 +465,61 @@ components:
       required:
       - retry_after_seconds
       additionalProperties: false
-    BatchRetry:
-      $ref: '#/components/schemas/Batch'
+    Batch:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^batch_[0-9a-f]{32}$
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        version:
+          type: integer
+          minimum: 1
+        format:
+          type: string
+          enum:
+          - pdf
+          - png
+          - jpeg
+          - webp
+        created_at:
+          type: string
+          format: date-time
+        state:
+          type: string
+          enum:
+          - queued
+          - running
+          - complete
+          - partial
+          - failed
+          - cancelled
+        quoted_credits:
+          type: integer
+          minimum: 1
+          maximum: 200
+          description: The row count. Each successful file settles one credit. Failed and cancelled rows cost nothing. There is no bulk discount.
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchRow'
+        archive_url:
+          type:
+          - string
+          - 'null'
+          description: A signed ZIP download link, present once any row has succeeded.
+      required:
+      - id
+      - template_id
+      - version
+      - format
+      - created_at
+      - state
+      - quoted_credits
+      - rows
+      - archive_url
+      additionalProperties: false
     FieldDetail:
       type: object
       description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
@@ -608,43 +560,91 @@ components:
       - field
       - reason
       additionalProperties: false
-  responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Error:
-      description: The one error envelope every backend response uses.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+    BatchRow:
+      type: object
+      properties:
+        position:
+          type: integer
+          minimum: 0
+        state:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            code:
+              type: string
+          required:
+          - code
+          additionalProperties: false
+        download_url:
+          type:
+          - string
+          - 'null'
+      required:
+      - position
+      - state
+      - error
+      - download_url
+      additionalProperties: false
+    BatchCreate:
+      type: object
+      properties:
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        version:
+          type: integer
+          minimum: 1
+          description: Omitted to use the template's latest version at creation time. The batch pins that exact version.
+        format:
+          type: string
+          enum:
+          - pdf
+          - png
+          - jpeg
+          - webp
+        rows:
+          type: array
+          items:
+            type: object
+          minItems: 1
+          maxItems: 200
+          description: 1 to 200 JSON objects. Each object is one render. 200 is the system cap; the account plan can allow fewer. The CSV parser lives in the studio; this API accepts rows only.
+      required:
+      - template_id
+      - format
+      - rows
+      additionalProperties: false
+    BatchRetry:
+      $ref: '#/components/schemas/Batch'
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.

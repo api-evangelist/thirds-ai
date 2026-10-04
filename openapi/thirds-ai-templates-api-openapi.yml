@@ -421,6 +421,180 @@ paths:
       - Templates
 components:
   schemas:
+    TemplateWriteRequest:
+      type: object
+      properties:
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
+        name:
+          $ref: '#/components/schemas/TemplateName'
+        input_mode:
+          type: string
+          enum:
+          - blank
+          - html
+          default: html
+          description: How this new template starts. It records a blank-page start or imported HTML. New versions do not accept this field.
+        source:
+          type: string
+          maxLength: 1048576
+        schema:
+          oneOf:
+          - type: object
+          - type: boolean
+          - type: 'null'
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
+      required:
+      - source
+      additionalProperties: false
+    TemplateVersionWriteRequest:
+      type: object
+      properties:
+        source:
+          type: string
+          maxLength: 1048576
+        schema:
+          oneOf:
+          - type: object
+          - type: boolean
+          - type: 'null'
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
+      required:
+      - source
+      additionalProperties: false
+    TemplateRename:
+      type: object
+      description: Omitted fields keep their current values. Set name to null to clear it, tags to an empty array to clear them, or archived_at to null to restore the template.
+      properties:
+        archived_at:
+          type: 'null'
+          description: Restore the item. Omit this field to keep its archive state.
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
+        name:
+          $ref: '#/components/schemas/TemplateName'
+      additionalProperties: false
+    TemplateVersionDetail:
+      type: object
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+          maxLength: 1048576
+        schema: {}
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
+      required:
+      - version
+      - created_at
+      - source
+      - schema
+      - sizes
+      additionalProperties: false
+    SizeVariant:
+      type: object
+      description: One saved canvas size for a template version. `docs/SMART-RESIZE.md` owns the rules.
+      properties:
+        id:
+          type: string
+          pattern: ^[a-z0-9][a-z0-9-]{0,39}$
+          description: Unique within the version. The id original is reserved for the version's own canvas.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        width:
+          type: integer
+          minimum: 320
+          maximum: 7680
+        height:
+          type: integer
+          minimum: 200
+          maximum: 4320
+        status:
+          type: string
+          enum:
+          - auto
+          - edited
+        source:
+          type: string
+          maxLength: 1048576
+          description: The source canvas must declare exactly width by height.
+        data_overrides:
+          type: object
+          description: Merged over the version's rendered data for this size only.
+      required:
+      - id
+      - name
+      - width
+      - height
+      - status
+      - source
+      additionalProperties: false
+    TemplateTags:
+      type: array
+      maxItems: 20
+      uniqueItems: true
+      items:
+        type: string
+        minLength: 1
+        maxLength: 40
+      description: Trimmed tags. Each tag is nonblank. Case is preserved.
+    TemplateSummary:
+      type: object
+      properties:
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
+        id:
+          $ref: '#/components/schemas/TemplateId'
+        name:
+          $ref: '#/components/schemas/TemplateName'
+        created_at:
+          type: string
+          format: date-time
+        archived_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        latest_version:
+          type: integer
+          minimum: 1
+      required:
+      - id
+      - name
+      - tags
+      - created_at
+      - archived_at
+      - latest_version
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    TemplatePreview:
+      type: object
+      properties:
+        html:
+          type: string
+          maxLength: 5242880
+      required:
+      - html
+      additionalProperties: false
     TemplatePreviewRequest:
       type: object
       properties:
@@ -444,49 +618,6 @@ components:
       required:
       - source
       - data
-      additionalProperties: false
-    TemplateName:
-      type:
-      - string
-      - 'null'
-      maxLength: 120
-      description: The customer's own name for a template. It is trimmed and can have 1 to 120 characters. Null or blank means no name.
-    TemplateVersionWriteRequest:
-      type: object
-      properties:
-        source:
-          type: string
-          maxLength: 1048576
-        schema:
-          oneOf:
-          - type: object
-          - type: boolean
-          - type: 'null'
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
-      required:
-      - source
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
       additionalProperties: false
     TemplateAdaptResponse:
       type: object
@@ -521,33 +652,9 @@ components:
       required:
       - sizes
       additionalProperties: false
-    TemplateVersionDetail:
-      type: object
-      properties:
-        version:
-          type: integer
-          minimum: 1
-        created_at:
-          type: string
-          format: date-time
-        source:
-          type: string
-          maxLength: 1048576
-        schema: {}
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
-      required:
-      - version
-      - created_at
-      - source
-      - schema
-      - sizes
-      additionalProperties: false
-    SizeVariantList:
-      type: array
-      maxItems: 20
-      items:
-        $ref: '#/components/schemas/SizeVariant'
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
     TemplateVersionPage:
       type: object
       properties:
@@ -565,132 +672,12 @@ components:
       - items
       - next_cursor
       additionalProperties: false
-    TemplateVersionSummary:
-      type: object
-      properties:
-        version:
-          type: integer
-          minimum: 1
-        created_at:
-          type: string
-          format: date-time
-      required:
-      - version
-      - created_at
-      additionalProperties: false
-    TemplateSummary:
-      type: object
-      properties:
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        id:
-          $ref: '#/components/schemas/TemplateId'
-        name:
-          $ref: '#/components/schemas/TemplateName'
-        created_at:
-          type: string
-          format: date-time
-        archived_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        latest_version:
-          type: integer
-          minimum: 1
-      required:
-      - id
-      - name
-      - tags
-      - created_at
-      - archived_at
-      - latest_version
-      additionalProperties: false
-    TemplateTags:
-      type: array
-      maxItems: 20
-      uniqueItems: true
-      items:
-        type: string
-        minLength: 1
-        maxLength: 40
-      description: Trimmed tags. Each tag is nonblank. Case is preserved.
-    TemplateWriteRequest:
-      type: object
-      properties:
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        name:
-          $ref: '#/components/schemas/TemplateName'
-        input_mode:
-          type: string
-          enum:
-          - blank
-          - html
-          default: html
-          description: How this new template starts. It records a blank-page start or imported HTML. New versions do not accept this field.
-        source:
-          type: string
-          maxLength: 1048576
-        schema:
-          oneOf:
-          - type: object
-          - type: boolean
-          - type: 'null'
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
-      required:
-      - source
-      additionalProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
-      additionalProperties: false
-    TemplatePreview:
-      type: object
-      properties:
-        html:
-          type: string
-          maxLength: 5242880
-      required:
-      - html
-      additionalProperties: false
-    TemplateAdaptRequest:
-      type: object
-      description: Adapt one HTML source to many target canvas sizes with the deterministic layout algorithm. This is free and does not save anything.
-      properties:
-        source:
-          type: string
-          maxLength: 1048576
-        sizes:
-          type: array
-          maxItems: 20
-          items:
-            type: object
-            properties:
-              width:
-                type: integer
-                minimum: 320
-                maximum: 7680
-              height:
-                type: integer
-                minimum: 200
-                maximum: 4320
-            required:
-            - width
-            - height
-            additionalProperties: false
-      required:
-      - source
-      - sizes
-      additionalProperties: false
+    TemplateName:
+      type:
+      - string
+      - 'null'
+      maxLength: 120
+      description: The customer's own name for a template. It is trimmed and can have 1 to 120 characters. Null or blank means no name.
     ArchivePeriod:
       type: object
       properties:
@@ -746,72 +733,76 @@ components:
       - field
       - reason
       additionalProperties: false
-    SizeVariant:
+    TemplateDetail:
       type: object
-      description: One saved canvas size for a template version. `docs/SMART-RESIZE.md` owns the rules.
       properties:
+        archive_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchivePeriod'
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
         id:
-          type: string
-          pattern: ^[a-z0-9][a-z0-9-]{0,39}$
-          description: Unique within the version. The id original is reserved for the version's own canvas.
+          $ref: '#/components/schemas/TemplateId'
         name:
+          $ref: '#/components/schemas/TemplateName'
+        created_at:
           type: string
-          minLength: 1
-          maxLength: 120
-        width:
-          type: integer
-          minimum: 320
-          maximum: 7680
-        height:
-          type: integer
-          minimum: 200
-          maximum: 4320
-        status:
-          type: string
-          enum:
-          - auto
-          - edited
-        source:
-          type: string
-          maxLength: 1048576
-          description: The source canvas must declare exactly width by height.
-        data_overrides:
-          type: object
-          description: Merged over the version's rendered data for this size only.
-      required:
-      - id
-      - name
-      - width
-      - height
-      - status
-      - source
-      additionalProperties: false
-    TemplatePage:
-      type: object
-      properties:
-        tag_options:
-          type: array
-          maxItems: 100
-          uniqueItems: true
-          items:
-            type: string
-            minLength: 1
-            maxLength: 40
-          description: The first 100 distinct account tags, sorted. Use the tag filter for any other tag.
-        items:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/TemplateSummary'
-        next_cursor:
+          format: date-time
+        archived_at:
           type:
           - string
           - 'null'
-          maxLength: 128
+          format: date-time
+        latest_version:
+          type: integer
+          minimum: 1
+        source:
+          type: string
+          maxLength: 1048576
+        schema: {}
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
       required:
-      - items
-      - next_cursor
-      - tag_options
+      - archive_history
+      - id
+      - name
+      - tags
+      - created_at
+      - archived_at
+      - latest_version
+      - source
+      - schema
+      - sizes
+      additionalProperties: false
+    TemplateAdaptRequest:
+      type: object
+      description: Adapt one HTML source to many target canvas sizes with the deterministic layout algorithm. This is free and does not save anything.
+      properties:
+        source:
+          type: string
+          maxLength: 1048576
+        sizes:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            properties:
+              width:
+                type: integer
+                minimum: 320
+                maximum: 7680
+              height:
+                type: integer
+                minimum: 200
+                maximum: 4320
+            required:
+            - width
+            - height
+            additionalProperties: false
+      required:
+      - source
+      - sizes
       additionalProperties: false
     ErrorEnvelope:
       type: object
@@ -972,73 +963,73 @@ components:
       required:
       - error
       additionalProperties: false
-    TemplateRename:
-      type: object
-      description: Omitted fields keep their current values. Set name to null to clear it, tags to an empty array to clear them, or archived_at to null to restore the template.
-      properties:
-        archived_at:
-          type: 'null'
-          description: Restore the item. Omit this field to keep its archive state.
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        name:
-          $ref: '#/components/schemas/TemplateName'
-      additionalProperties: false
-    TemplateId:
-      type: string
-      pattern: ^tpl_[0-9a-f]{32}$
-    TemplateDetail:
+    TemplateVersionSummary:
       type: object
       properties:
-        archive_history:
-          type: array
-          items:
-            $ref: '#/components/schemas/ArchivePeriod'
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        id:
-          $ref: '#/components/schemas/TemplateId'
-        name:
-          $ref: '#/components/schemas/TemplateName'
+        version:
+          type: integer
+          minimum: 1
         created_at:
           type: string
           format: date-time
-        archived_at:
+      required:
+      - version
+      - created_at
+      additionalProperties: false
+    TemplatePage:
+      type: object
+      properties:
+        tag_options:
+          type: array
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+          description: The first 100 distinct account tags, sorted. Use the tag filter for any other tag.
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/TemplateSummary'
+        next_cursor:
           type:
           - string
           - 'null'
-          format: date-time
-        latest_version:
+          maxLength: 128
+      required:
+      - items
+      - next_cursor
+      - tag_options
+      additionalProperties: false
+    SizeVariantList:
+      type: array
+      maxItems: 20
+      items:
+        $ref: '#/components/schemas/SizeVariant'
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
           type: integer
           minimum: 1
-        source:
-          type: string
-          maxLength: 1048576
-        schema: {}
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
       required:
-      - archive_history
-      - id
-      - name
-      - tags
-      - created_at
-      - archived_at
-      - latest_version
-      - source
-      - schema
-      - sizes
+      - plan
+      - limit
       additionalProperties: false
   responses:
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
     MethodNotAllowed:
       description: The method is not allowed on this route.
       headers:
@@ -1048,8 +1039,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -1059,6 +1050,15 @@ components:
             $ref: '#/components/schemas/ErrorEnvelope'
     Error:
       description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'

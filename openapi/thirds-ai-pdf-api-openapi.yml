@@ -394,137 +394,67 @@ paths:
       tags:
       - PDF
 components:
+  responses:
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    PdfHistoryItem:
-      type: object
-      description: One job in a bounded account history — the subset of PdfJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
-      properties:
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
-          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
-        id:
-          type: string
-          pattern: ^pdf_[0-9a-f]{32}$
-        status:
-          type: string
-          enum:
-          - queued
-          - running
-          - succeeded
-          - failed
-          - cancelled
-        created_at:
-          type: string
-          format: date-time
-        finished_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        template:
-          type:
-          - object
-          - 'null'
-          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
-          properties:
-            id:
-              $ref: '#/components/schemas/TemplateId'
-            version:
-              type: integer
-              minimum: 1
-          required:
-          - id
-          - version
-          additionalProperties: false
-        credit:
-          type: string
-          enum:
-          - reserved
-          - settled
-          - released
-          - none
-          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
-        artifact:
-          type:
-          - object
-          - 'null'
-          properties:
-            media_type:
-              const: application/pdf
-            byte_size:
-              type: integer
-              minimum: 0
-            sha256:
-              type: string
-              pattern: ^[0-9a-f]{64}$
-            expires_at:
-              type: string
-              format: date-time
-              description: When retention ends and the file stops being served.
-            removed_reason:
-              type:
-              - string
-              - 'null'
-              enum:
-              - expired
-              - deleted
-              - null
-          required:
-          - media_type
-          - byte_size
-          - sha256
-          - expires_at
-          - removed_reason
-          additionalProperties: false
-        error:
-          type:
-          - object
-          - 'null'
-          properties:
-            category:
-              type: string
-              enum:
-              - invalid_input
-              - unsafe_asset
-              - resource_limit
-              - timeout
-              - renderer_failure
-              - internal_failure
-            code:
-              type: string
-          required:
-          - category
-          - code
-          additionalProperties: false
-      required:
-      - id
-      - status
-      - created_at
-      - finished_at
-      - template
-      - credit
-      - artifact
-      - error
-      additionalProperties: false
-    StatelessTemplatePdfRequest:
-      description: A bounded stateless template evaluation followed by the existing PDF render workflow. The request saves no reusable template. Data must be exactly one JSON object. Only evaluated HTML and the effective render options enter short-lived render input storage.
+    PdfRequest:
+      description: 'Exactly one supported PDF input mode: raw HTML, an inline stateless template, or one saved-template version. Image request shapes are not part of this endpoint.'
+      oneOf:
+      - $ref: '#/components/schemas/RawPdfRequest'
+      - $ref: '#/components/schemas/StatelessTemplatePdfRequest'
+      - $ref: '#/components/schemas/SavedTemplatePdfRequest'
+    SavedTemplatePdfRequest:
+      description: Render one exact owned saved-template version. Omit version to resolve the latest version once before validation and admission. Data must be exactly one JSON object.
       allOf:
       - $ref: '#/components/schemas/PdfRequestCommon'
       - type: object
         properties:
-          html:
-            type: string
-            minLength: 1
-            maxLength: 1048576
-            description: The inline Jinja-style template source. The evaluator accepts at most 1,048,576 bytes.
+          template_id:
+            $ref: '#/components/schemas/TemplateId'
+          version:
+            type: integer
+            minimum: 1
+            description: An exact immutable version. Omit to select latest once.
           data:
             type: object
-            description: The JSON-compatible data object available to the template. Arrays, scalars, and null are not accepted as the top-level value. Its canonical recursively key-sorted JSON representation may contain at most 1,048,576 bytes; JSON Schema cannot express that serialized-byte bound.
+            description: The JSON-compatible data object validated against the selected version's optional schema before evaluation or admission.
         required:
-        - html
+        - template_id
         - data
       unevaluatedProperties: false
     ErrorEnvelope:
@@ -686,55 +616,163 @@ components:
       required:
       - error
       additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
     TemplateId:
       type: string
       pattern: ^tpl_[0-9a-f]{32}$
-    PdfRequest:
-      description: 'Exactly one supported PDF input mode: raw HTML, an inline stateless template, or one saved-template version. Image request shapes are not part of this endpoint.'
-      oneOf:
-      - $ref: '#/components/schemas/RawPdfRequest'
-      - $ref: '#/components/schemas/StatelessTemplatePdfRequest'
-      - $ref: '#/components/schemas/SavedTemplatePdfRequest'
-    SavedTemplatePdfRequest:
-      description: Render one exact owned saved-template version. Omit version to resolve the latest version once before validation and admission. Data must be exactly one JSON object.
-      allOf:
-      - $ref: '#/components/schemas/PdfRequestCommon'
-      - type: object
-        properties:
-          template_id:
-            $ref: '#/components/schemas/TemplateId'
-          version:
-            type: integer
-            minimum: 1
-            description: An exact immutable version. Omit to select latest once.
-          data:
-            type: object
-            description: The JSON-compatible data object validated against the selected version's optional schema before evaluation or admission.
-        required:
-        - template_id
-        - data
-      unevaluatedProperties: false
+    PdfHistoryPage:
+      type: object
+      description: One bounded page of an account's render history, newest first.
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PdfHistoryItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+          description: Pass as the cursor query parameter to read the next page. Null on the last page.
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    PdfJob:
+      type: object
+      description: The state of one render job. This is the same shape whether the job just finished (200) or is still in progress (202).
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^pdf_[0-9a-f]{32}$
+          description: 'The job''s public identifier: "pdf_" followed by 32 lowercase hexadecimal characters.'
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          description: Present only for a succeeded job.
+          properties:
+            media_type:
+              const: application/pdf
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+              description: 64 lowercase hexadecimal characters.
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+              description: Null while the file is still available. "expired" once its retention window or an internal reconciliation has passed; "deleted" once the account removed it through DELETE /v1/pdf/{id}.
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          description: Present only for a terminal failure. Never carries a message, only a fixed code.
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+        download:
+          type:
+          - object
+          - 'null'
+          description: Present only while a succeeded job's PDF is still available. A fresh signed link every time this job is read.
+          properties:
+            url:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+          required:
+          - url
+          - expires_at
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      - download
+      additionalProperties: false
     RetryInfo:
       type: object
       description: How long the caller must wait before it retries.
@@ -746,8 +784,8 @@ components:
       required:
       - retry_after_seconds
       additionalProperties: false
-    RawPdfRequest:
-      description: A raw HTML render. The HTML enters the existing render workflow unchanged.
+    StatelessTemplatePdfRequest:
+      description: A bounded stateless template evaluation followed by the existing PDF render workflow. The request saves no reusable template. Data must be exactly one JSON object. Only evaluated HTML and the effective render options enter short-lived render input storage.
       allOf:
       - $ref: '#/components/schemas/PdfRequestCommon'
       - type: object
@@ -755,10 +793,14 @@ components:
           html:
             type: string
             minLength: 1
-            maxLength: 5242880
-            description: The raw HTML document to render. Up to 5,242,880 bytes.
+            maxLength: 1048576
+            description: The inline Jinja-style template source. The evaluator accepts at most 1,048,576 bytes.
+          data:
+            type: object
+            description: The JSON-compatible data object available to the template. Arrays, scalars, and null are not accepted as the top-level value. Its canonical recursively key-sorted JSON representation may contain at most 1,048,576 bytes; JSON Schema cannot express that serialized-byte bound.
         required:
         - html
+        - data
       unevaluatedProperties: false
     PdfRequestCommon:
       type: object
@@ -928,9 +970,49 @@ components:
           minItems: 1
           maxItems: 100
           description: Canvas data-thirds-page ids in output order. Omitted keeps every page in document order. Duplicate or unknown ids are refused.
-    PdfJob:
+    FieldDetail:
       type: object
-      description: The state of one render job. This is the same shape whether the job just finished (200) or is still in progress (202).
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    PdfHistoryItem:
+      type: object
+      description: One job in a bounded account history — the subset of PdfJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
       properties:
         reference:
           type: string
@@ -941,7 +1023,6 @@ components:
         id:
           type: string
           pattern: ^pdf_[0-9a-f]{32}$
-          description: 'The job''s public identifier: "pdf_" followed by 32 lowercase hexadecimal characters.'
         status:
           type: string
           enum:
@@ -985,7 +1066,6 @@ components:
           type:
           - object
           - 'null'
-          description: Present only for a succeeded job.
           properties:
             media_type:
               const: application/pdf
@@ -995,7 +1075,6 @@ components:
             sha256:
               type: string
               pattern: ^[0-9a-f]{64}$
-              description: 64 lowercase hexadecimal characters.
             expires_at:
               type: string
               format: date-time
@@ -1008,7 +1087,6 @@ components:
               - expired
               - deleted
               - null
-              description: Null while the file is still available. "expired" once its retention window or an internal reconciliation has passed; "deleted" once the account removed it through DELETE /v1/pdf/{id}.
           required:
           - media_type
           - byte_size
@@ -1020,7 +1098,6 @@ components:
           type:
           - object
           - 'null'
-          description: Present only for a terminal failure. Never carries a message, only a fixed code.
           properties:
             category:
               type: string
@@ -1037,21 +1114,6 @@ components:
           - category
           - code
           additionalProperties: false
-        download:
-          type:
-          - object
-          - 'null'
-          description: Present only while a succeeded job's PDF is still available. A fresh signed link every time this job is read.
-          properties:
-            url:
-              type: string
-            expires_at:
-              type: string
-              format: date-time
-          required:
-          - url
-          - expires_at
-          additionalProperties: false
       required:
       - id
       - status
@@ -1061,104 +1123,42 @@ components:
       - credit
       - artifact
       - error
-      - download
       additionalProperties: false
-    FieldDetail:
+    RawPdfRequest:
+      description: A raw HTML render. The HTML enters the existing render workflow unchanged.
+      allOf:
+      - $ref: '#/components/schemas/PdfRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 5242880
+            description: The raw HTML document to render. Up to 5,242,880 bytes.
+        required:
+        - html
+      unevaluatedProperties: false
+    PlanLimitInfo:
       type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
       properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
+        plan:
           type: string
           enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
           type: integer
           minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
       required:
-      - field
-      - reason
+      - plan
+      - limit
       additionalProperties: false
-    PdfHistoryPage:
-      type: object
-      description: One bounded page of an account's render history, newest first.
-      properties:
-        items:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/PdfHistoryItem'
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          maxLength: 128
-          description: Pass as the cursor query parameter to read the next page. Null on the last page.
-      required:
-      - items
-      - next_cursor
-      additionalProperties: false
-  responses:
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Error:
-      description: The one error envelope every backend response uses.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.

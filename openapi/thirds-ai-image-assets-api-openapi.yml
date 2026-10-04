@@ -194,8 +194,8 @@ paths:
       - Image Assets
 components:
   responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -203,8 +203,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -381,27 +381,6 @@ components:
       required:
       - error
       additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
     RetryInfo:
       type: object
       description: How long the caller must wait before it retries.
@@ -413,44 +392,6 @@ components:
       required:
       - retry_after_seconds
       additionalProperties: false
-    UploadedImage:
-      type: object
-      additionalProperties: false
-      required:
-      - id
-      - reference
-      - media_type
-      - byte_size
-      - width
-      - height
-      properties:
-        id:
-          type: string
-          pattern: ^asset_[a-f0-9]{32}$
-        reference:
-          type: string
-          pattern: ^asset://asset_[a-f0-9]{32}$
-          description: Private template reference. This is not a fetchable URL.
-        media_type:
-          type: string
-          enum:
-          - image/png
-          - image/jpeg
-          - image/webp
-        byte_size:
-          type: integer
-          minimum: 1
-          maximum: 10485760
-        width:
-          type: integer
-          minimum: 1
-          maximum: 7680
-          description: Display width after image orientation.
-        height:
-          type: integer
-          minimum: 1
-          maximum: 7680
-          description: Display height after image orientation.
     FieldDetail:
       type: object
       description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
@@ -490,6 +431,65 @@ components:
       required:
       - field
       - reason
+      additionalProperties: false
+    UploadedImage:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - reference
+      - media_type
+      - byte_size
+      - width
+      - height
+      properties:
+        id:
+          type: string
+          pattern: ^asset_[a-f0-9]{32}$
+        reference:
+          type: string
+          pattern: ^asset://asset_[a-f0-9]{32}$
+          description: Private template reference. This is not a fetchable URL.
+        media_type:
+          type: string
+          enum:
+          - image/png
+          - image/jpeg
+          - image/webp
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+        width:
+          type: integer
+          minimum: 1
+          maximum: 7680
+          description: Display width after image orientation.
+        height:
+          type: integer
+          minimum: 1
+          maximum: 7680
+          description: Display height after image orientation.
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
       additionalProperties: false
   headers:
     XRequestId:

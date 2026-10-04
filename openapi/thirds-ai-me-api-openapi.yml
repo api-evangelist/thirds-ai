@@ -117,8 +117,8 @@ paths:
       - Me
 components:
   responses:
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -126,8 +126,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -295,29 +295,16 @@ components:
       required:
       - error
       additionalProperties: false
-    AccountEmailAccepted:
+    RetryInfo:
       type: object
-      additionalProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      description: How long the caller must wait before it retries.
       properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
+        retry_after_seconds:
           type: integer
           minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+          maximum: 60
       required:
-      - plan
-      - limit
+      - retry_after_seconds
       additionalProperties: false
     AccountEmailRequest:
       type: object
@@ -329,17 +316,6 @@ components:
           description: A safe local path after proof; defaults to /account.
       required:
       - email
-      additionalProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
       additionalProperties: false
     FieldDetail:
       type: object
@@ -380,6 +356,30 @@ components:
       required:
       - field
       - reason
+      additionalProperties: false
+    AccountEmailAccepted:
+      type: object
+      additionalProperties: false
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
       additionalProperties: false
   headers:
     XRequestId:
