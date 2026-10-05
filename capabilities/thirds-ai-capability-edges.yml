@@ -1,0 +1,38 @@
+slug: thirds-ai
+provider: thirds.ai
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 2
+edges:
+- tag: Keys
+  spec_file: thirds-ai-keys-api-openapi.yml
+  capability_id: BC-4270.40
+  capability_id_l1: BC-4270
+  capability_name: Developer Identity & Credential Management
+  confidence: 0.85
+  evidence: POST /v1/keys createApiKey 'Create an API key'; DELETE /v1/keys/{key_id} revokeApiKey 'Revoke
+    an API key'
+  reason: Issuance, listing and revocation of API keys for developers consuming the public API is exactly
+    developer credential stewardship. The overage-cap PATCH touches consumption governance, but credential
+    lifecycle dominates the surface.
+- tag: Webhooks
+  spec_file: thirds-ai-webhooks-api-openapi.yml
+  capability_id: BC-4270.80
+  capability_id_l1: BC-4270
+  capability_name: Webhook & Event Subscription Management
+  confidence: 0.85
+  evidence: POST /v1/webhooks  createWebhook  Register a webhook destination; GET /v1/webhooks/{webhook_id}/deliveries  listWebhookDeliveries  Read
+    recent webhook attempts; POST /v1/webhooks/{webhook_id}/replay  Replay a webhook destination's failed
+    events
+  reason: Operations cover the full lifecycle of outbound webhook subscriptions plus delivery reliability
+    (test, deliveries, replay, secret rotation), which is exactly the named Webhook & Event Subscription
+    Management capability in this frame.
