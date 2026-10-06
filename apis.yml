@@ -4,7 +4,7 @@ description: Turn one design into content at scale. thirds.ai makes editable tem
   PNG, JPEG, and WebP.
 url: https://raw.githubusercontent.com/api-evangelist/thirds-ai/refs/heads/main/apis.yml
 created: '2026-09-18'
-modified: '2026-09-18'
+modified: '2026-10-06'
 specificationVersion: '0.21'
 tags:
 - pdf-automation
@@ -375,6 +375,8 @@ generated:
   confidence: 96
   at: '2026-09-18T09:14:04.214Z'
 common:
+- url: https://thirds.ai/blog/feed.xml
+  type: BlogRSS
 - type: CapabilityMap
   url: capabilities/thirds-ai-capability-edges.yml
   name: thirds.ai Business Capability Map
