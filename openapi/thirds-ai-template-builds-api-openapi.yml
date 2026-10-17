@@ -381,95 +381,125 @@ paths:
       tags:
       - Template Builds
 components:
-  responses:
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Error:
-      description: The one error envelope every backend response uses.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    RetryInfo:
+    BrandKitId:
+      type: string
+      pattern: ^kit_[0-9a-f]{32}$
+    TemplateBuildCreate:
       type: object
-      description: How long the caller must wait before it retries.
       properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
+        brand_kit_id:
+          $ref: '#/components/schemas/BrandKitId'
+        input:
+          $ref: '#/components/schemas/TemplateBuildInput'
+        input_mode:
+          type: string
+          enum:
+          - blank
+          - html
+          description: How new manual work starts. Only source input accepts this field. Omit it when the source comes from a saved template or an existing chat.
+        output:
+          $ref: '#/components/schemas/TemplateOutputIntent'
       required:
-      - retry_after_seconds
+      - brand_kit_id
+      - input
+      if:
+        required:
+        - input_mode
+      then:
+        properties:
+          input:
+            properties:
+              type:
+                const: source
       additionalProperties: false
-    TemplateOutputIntent:
-      oneOf:
-      - type: object
-        description: Let the model choose PDF or image from the message. An image result from a source image uses the source dimensions.
-        properties:
+    TemplateMessage:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/TemplateMessageId'
+        state:
+          type: string
+          enum:
+          - queued
+          - running
+          - previewing
+          - succeeded
+          - failed
+          - cancelled
+        phase:
+          type: string
+          enum:
+          - generate
+          - candidate
+          - review
+          - final
+        input_type:
+          type: string
+          enum:
+          - prompt
+          - html
+          - image
+          - source
+        credits:
+          type: integer
+          enum:
+          - 0
+          - 25
+          - 50
+        preview_id:
           type:
-            const: auto
-        required:
-        - type
-        additionalProperties: false
-      - type: object
-        properties:
+          - string
+          - 'null'
+          pattern: ^(pdf|image)_[0-9a-f]{32}$
+        output:
+          oneOf:
+          - $ref: '#/components/schemas/TemplateOutput'
+          - type: 'null'
+        review_count:
+          type: integer
+          minimum: 0
+          maximum: 5
+        max_reviews:
+          type: integer
+          minimum: 0
+          maximum: 5
+        input_text:
+          type: string
+          maxLength: 65536
+        repair_code:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          description: The last safe generation or render code that blocked this message. Present while a repair is in progress and after a failed message. It never holds customer content.
+        failure_category:
           type:
-            const: pdf
-        required:
-        - type
-        additionalProperties: false
-      - type: object
-        description: Request an image. Set both width and height to override the source dimensions. Without a source image, omitted dimensions use 1200 by 628.
-        properties:
+          - string
+          - 'null'
+          enum:
+          - provider
+          - validation
+          - renderer
+          - unsupported_input
+          - internal
+          - null
+        failure_code:
           type:
-            const: image
-          format:
-            type: string
-            enum:
-            - png
-            - jpeg
-            - webp
-            default: png
-          width:
-            type: integer
-            minimum: 320
-            maximum: 7680
-          height:
-            type: integer
-            minimum: 200
-            maximum: 4320
-        required:
-        - type
-        additionalProperties: false
+          - string
+          - 'null'
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+      required:
+      - id
+      - state
+      - phase
+      - input_type
+      - credits
+      - preview_id
+      - output
+      - review_count
+      - max_reviews
+      - failure_category
+      - failure_code
+      additionalProperties: false
     TemplateOutput:
       oneOf:
       - type: object
@@ -503,37 +533,100 @@ components:
         - width
         - height
         additionalProperties: false
-    TemplateId:
-      type: string
-      pattern: ^tpl_[0-9a-f]{32}$
-    TemplateBuildCreate:
+    PlanLimitInfo:
       type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
       properties:
-        brand_kit_id:
-          $ref: '#/components/schemas/BrandKitId'
-        input:
-          $ref: '#/components/schemas/TemplateBuildInput'
-        input_mode:
+        plan:
           type: string
           enum:
-          - blank
-          - html
-          description: How new manual work starts. Only source input accepts this field. Omit it when the source comes from a saved template or an existing chat.
-        output:
-          $ref: '#/components/schemas/TemplateOutputIntent'
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
       required:
-      - brand_kit_id
-      - input
-      if:
-        required:
-        - input_mode
-      then:
-        properties:
-          input:
-            properties:
-              type:
-                const: source
+      - plan
+      - limit
       additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    TemplateBuildInput:
+      oneOf:
+      - type: object
+        properties:
+          type:
+            const: prompt
+          prompt:
+            type: string
+            minLength: 1
+            maxLength: 65536
+        required:
+        - type
+        - prompt
+        additionalProperties: false
+      - type: object
+        properties:
+          type:
+            const: html
+          html:
+            type: string
+            minLength: 1
+            maxLength: 65536
+        required:
+        - type
+        - html
+        additionalProperties: false
+      - type: object
+        description: Rebuild a still PNG, JPEG, or WebP as an editable branded template. Inspired by the source, not a pixel copy. At most 10 MiB, 7680 by 4320, and 32 million pixels. An invalid file fails before the model.
+        properties:
+          type:
+            const: image
+          base64:
+            type: string
+            minLength: 1
+            maxLength: 13981016
+            contentEncoding: base64
+        required:
+        - type
+        - base64
+        additionalProperties: false
+      - type: object
+        description: Your own working template, sent as data. It must pass the saved-template checks and evaluate with sample_data. It becomes the draft without a model call and costs 0 credits.
+        properties:
+          type:
+            const: source
+          source:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+          sample_data:
+            type: object
+          schema:
+            oneOf:
+            - type: object
+            - type: boolean
+        required:
+        - type
+        - source
+        additionalProperties: false
+    TemplateBuildId:
+      type: string
+      pattern: ^build_[0-9a-f]{32}$
     TemplateBuild:
       type: object
       properties:
@@ -560,6 +653,48 @@ components:
       - current_message_id
       - published_template_id
       - message
+      additionalProperties: false
+    TemplateBuildDraft:
+      type: object
+      properties:
+        source:
+          type: string
+          maxLength: 1048576
+        sample_data:
+          type: object
+        schema: {}
+        output:
+          $ref: '#/components/schemas/TemplateOutput'
+      required:
+      - source
+      - sample_data
+      - schema
+      - output
+      additionalProperties: false
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    TemplateMessageCreate:
+      type: object
+      properties:
+        input:
+          $ref: '#/components/schemas/TemplateBuildInput'
+        output:
+          $ref: '#/components/schemas/TemplateOutputIntent'
+      required:
+      - input
+      additionalProperties: false
+    TemplatePublication:
+      type: object
+      properties:
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - template_id
+      - version
       additionalProperties: false
     FieldDetail:
       type: object
@@ -763,218 +898,83 @@ components:
       required:
       - error
       additionalProperties: false
-    TemplateBuildDraft:
-      type: object
-      properties:
-        source:
-          type: string
-          maxLength: 1048576
-        sample_data:
-          type: object
-        schema: {}
-        output:
-          $ref: '#/components/schemas/TemplateOutput'
-      required:
-      - source
-      - sample_data
-      - schema
-      - output
-      additionalProperties: false
-    TemplateMessageCreate:
-      type: object
-      properties:
-        input:
-          $ref: '#/components/schemas/TemplateBuildInput'
-        output:
-          $ref: '#/components/schemas/TemplateOutputIntent'
-      required:
-      - input
-      additionalProperties: false
-    TemplateMessage:
-      type: object
-      properties:
-        id:
-          $ref: '#/components/schemas/TemplateMessageId'
-        state:
-          type: string
-          enum:
-          - queued
-          - running
-          - previewing
-          - succeeded
-          - failed
-          - cancelled
-        phase:
-          type: string
-          enum:
-          - generate
-          - candidate
-          - review
-          - final
-        input_type:
-          type: string
-          enum:
-          - prompt
-          - html
-          - image
-          - source
-        credits:
-          type: integer
-          enum:
-          - 0
-          - 25
-          - 50
-        preview_id:
-          type:
-          - string
-          - 'null'
-          pattern: ^(pdf|image)_[0-9a-f]{32}$
-        output:
-          oneOf:
-          - $ref: '#/components/schemas/TemplateOutput'
-          - type: 'null'
-        review_count:
-          type: integer
-          minimum: 0
-          maximum: 5
-        max_reviews:
-          type: integer
-          minimum: 0
-          maximum: 5
-        input_text:
-          type: string
-          maxLength: 65536
-        repair_code:
-          type: string
-          pattern: ^[a-z][a-z0-9_]{0,63}$
-          description: The last safe generation or render code that blocked this message. Present while a repair is in progress and after a failed message. It never holds customer content.
-        failure_category:
-          type:
-          - string
-          - 'null'
-          enum:
-          - provider
-          - validation
-          - renderer
-          - unsupported_input
-          - internal
-          - null
-        failure_code:
-          type:
-          - string
-          - 'null'
-          pattern: ^[a-z][a-z0-9_]{0,63}$
-      required:
-      - id
-      - state
-      - phase
-      - input_type
-      - credits
-      - preview_id
-      - output
-      - review_count
-      - max_reviews
-      - failure_category
-      - failure_code
-      additionalProperties: false
-    TemplatePublication:
-      type: object
-      properties:
-        template_id:
-          $ref: '#/components/schemas/TemplateId'
-        version:
-          type: integer
-          minimum: 1
-      required:
-      - template_id
-      - version
-      additionalProperties: false
-    TemplateBuildId:
-      type: string
-      pattern: ^build_[0-9a-f]{32}$
-    TemplateBuildInput:
+    TemplateOutputIntent:
       oneOf:
       - type: object
+        description: Let the model choose PDF or image from the message. An image result from a source image uses the source dimensions.
         properties:
           type:
-            const: prompt
-          prompt:
-            type: string
-            minLength: 1
-            maxLength: 65536
+            const: auto
         required:
         - type
-        - prompt
         additionalProperties: false
       - type: object
         properties:
           type:
-            const: html
-          html:
-            type: string
-            minLength: 1
-            maxLength: 65536
+            const: pdf
         required:
         - type
-        - html
         additionalProperties: false
       - type: object
-        description: Rebuild a still PNG, JPEG, or WebP as an editable branded template. Inspired by the source, not a pixel copy. At most 10 MiB, 7680 by 4320, and 32 million pixels. An invalid file fails before the model.
+        description: Request an image. Set both width and height to override the source dimensions. Without a source image, omitted dimensions use 1200 by 628.
         properties:
           type:
             const: image
-          base64:
+          format:
             type: string
-            minLength: 1
-            maxLength: 13981016
-            contentEncoding: base64
+            enum:
+            - png
+            - jpeg
+            - webp
+            default: png
+          width:
+            type: integer
+            minimum: 320
+            maximum: 7680
+          height:
+            type: integer
+            minimum: 200
+            maximum: 4320
         required:
         - type
-        - base64
         additionalProperties: false
-      - type: object
-        description: Your own working template, sent as data. It must pass the saved-template checks and evaluate with sample_data. It becomes the draft without a model call and costs 0 credits.
-        properties:
-          type:
-            const: source
-          source:
-            type: string
-            minLength: 1
-            maxLength: 1048576
-          sample_data:
-            type: object
+  responses:
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
           schema:
-            oneOf:
-            - type: object
-            - type: boolean
-        required:
-        - type
-        - source
-        additionalProperties: false
-    BrandKitId:
-      type: string
-      pattern: ^kit_[0-9a-f]{32}$
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.

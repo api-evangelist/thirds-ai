@@ -448,35 +448,70 @@ components:
       required:
       - source
       additionalProperties: false
-    TemplateVersionWriteRequest:
+    TemplateVersionPage:
       type: object
       properties:
-        source:
-          type: string
-          maxLength: 1048576
-        schema:
-          oneOf:
-          - type: object
-          - type: boolean
-          - type: 'null'
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/TemplateVersionSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 32
       required:
-      - source
+      - items
+      - next_cursor
       additionalProperties: false
-    TemplateRename:
+    TemplatePreview:
       type: object
-      description: Omitted fields keep their current values. Set name to null to clear it, tags to an empty array to clear them, or archived_at to null to restore the template.
       properties:
-        archived_at:
-          type: 'null'
-          description: Restore the item. Omit this field to keep its archive state.
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        name:
-          $ref: '#/components/schemas/TemplateName'
+        html:
+          type: string
+          maxLength: 5242880
+      required:
+      - html
       additionalProperties: false
-    TemplateVersionDetail:
+    PlanLimitInfo:
+      type: object
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
+      properties:
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
+      required:
+      - plan
+      - limit
+      additionalProperties: false
+    RetryInfo:
+      type: object
+      description: How long the caller must wait before it retries.
+      properties:
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+      - retry_after_seconds
+      additionalProperties: false
+    SizeVariantList:
+      type: array
+      maxItems: 20
+      items:
+        $ref: '#/components/schemas/SizeVariant'
+    TemplateVersionSummary:
       type: object
       properties:
         version:
@@ -485,18 +520,105 @@ components:
         created_at:
           type: string
           format: date-time
-        source:
-          type: string
-          maxLength: 1048576
-        schema: {}
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
       required:
       - version
       - created_at
+      additionalProperties: false
+    TemplateAdaptRequest:
+      type: object
+      description: Adapt one HTML source to many target canvas sizes with the deterministic layout algorithm. This is free and does not save anything.
+      properties:
+        source:
+          type: string
+          maxLength: 1048576
+        sizes:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            properties:
+              width:
+                type: integer
+                minimum: 320
+                maximum: 7680
+              height:
+                type: integer
+                minimum: 200
+                maximum: 4320
+            required:
+            - width
+            - height
+            additionalProperties: false
+      required:
       - source
-      - schema
       - sizes
+      additionalProperties: false
+    ArchivePeriod:
+      type: object
+      properties:
+        archived_at:
+          type: string
+          format: date-time
+        restored_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - archived_at
+      - restored_at
+      additionalProperties: false
+    TemplateTags:
+      type: array
+      maxItems: 20
+      uniqueItems: true
+      items:
+        type: string
+        minLength: 1
+        maxLength: 40
+      description: Trimmed tags. Each tag is nonblank. Case is preserved.
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
       additionalProperties: false
     SizeVariant:
       type: object
@@ -538,62 +660,21 @@ components:
       - status
       - source
       additionalProperties: false
-    TemplateTags:
-      type: array
-      maxItems: 20
-      uniqueItems: true
-      items:
-        type: string
-        minLength: 1
-        maxLength: 40
-      description: Trimmed tags. Each tag is nonblank. Case is preserved.
-    TemplateSummary:
+    TemplateVersionWriteRequest:
       type: object
       properties:
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        id:
-          $ref: '#/components/schemas/TemplateId'
-        name:
-          $ref: '#/components/schemas/TemplateName'
-        created_at:
+        source:
           type: string
-          format: date-time
-        archived_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        latest_version:
-          type: integer
-          minimum: 1
+          maxLength: 1048576
+        schema:
+          oneOf:
+          - type: object
+          - type: boolean
+          - type: 'null'
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
       required:
-      - id
-      - name
-      - tags
-      - created_at
-      - archived_at
-      - latest_version
-      additionalProperties: false
-    RetryInfo:
-      type: object
-      description: How long the caller must wait before it retries.
-      properties:
-        retry_after_seconds:
-          type: integer
-          minimum: 1
-          maximum: 60
-      required:
-      - retry_after_seconds
-      additionalProperties: false
-    TemplatePreview:
-      type: object
-      properties:
-        html:
-          type: string
-          maxLength: 5242880
-      required:
-      - html
+      - source
       additionalProperties: false
     TemplatePreviewRequest:
       type: object
@@ -618,191 +699,6 @@ components:
       required:
       - source
       - data
-      additionalProperties: false
-    TemplateAdaptResponse:
-      type: object
-      properties:
-        sizes:
-          type: array
-          items:
-            type: object
-            properties:
-              width:
-                type: integer
-              height:
-                type: integer
-              source:
-                type: string
-                maxLength: 1048576
-              error:
-                type: object
-                properties:
-                  code:
-                    type: string
-                    enum:
-                    - resize_source_unsupported
-                    - resize_no_layout
-                required:
-                - code
-                additionalProperties: false
-            required:
-            - width
-            - height
-            additionalProperties: false
-      required:
-      - sizes
-      additionalProperties: false
-    TemplateId:
-      type: string
-      pattern: ^tpl_[0-9a-f]{32}$
-    TemplateVersionPage:
-      type: object
-      properties:
-        items:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/TemplateVersionSummary'
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          maxLength: 32
-      required:
-      - items
-      - next_cursor
-      additionalProperties: false
-    TemplateName:
-      type:
-      - string
-      - 'null'
-      maxLength: 120
-      description: The customer's own name for a template. It is trimmed and can have 1 to 120 characters. Null or blank means no name.
-    ArchivePeriod:
-      type: object
-      properties:
-        archived_at:
-          type: string
-          format: date-time
-        restored_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-      required:
-      - archived_at
-      - restored_at
-      additionalProperties: false
-    FieldDetail:
-      type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
-      properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
-          type: string
-          enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
-      required:
-      - field
-      - reason
-      additionalProperties: false
-    TemplateDetail:
-      type: object
-      properties:
-        archive_history:
-          type: array
-          items:
-            $ref: '#/components/schemas/ArchivePeriod'
-        tags:
-          $ref: '#/components/schemas/TemplateTags'
-        id:
-          $ref: '#/components/schemas/TemplateId'
-        name:
-          $ref: '#/components/schemas/TemplateName'
-        created_at:
-          type: string
-          format: date-time
-        archived_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        latest_version:
-          type: integer
-          minimum: 1
-        source:
-          type: string
-          maxLength: 1048576
-        schema: {}
-        sizes:
-          $ref: '#/components/schemas/SizeVariantList'
-      required:
-      - archive_history
-      - id
-      - name
-      - tags
-      - created_at
-      - archived_at
-      - latest_version
-      - source
-      - schema
-      - sizes
-      additionalProperties: false
-    TemplateAdaptRequest:
-      type: object
-      description: Adapt one HTML source to many target canvas sizes with the deterministic layout algorithm. This is free and does not save anything.
-      properties:
-        source:
-          type: string
-          maxLength: 1048576
-        sizes:
-          type: array
-          maxItems: 20
-          items:
-            type: object
-            properties:
-              width:
-                type: integer
-                minimum: 320
-                maximum: 7680
-              height:
-                type: integer
-                minimum: 200
-                maximum: 4320
-            required:
-            - width
-            - height
-            additionalProperties: false
-      required:
-      - source
-      - sizes
       additionalProperties: false
     ErrorEnvelope:
       type: object
@@ -963,19 +859,66 @@ components:
       required:
       - error
       additionalProperties: false
-    TemplateVersionSummary:
+    TemplateDetail:
       type: object
       properties:
-        version:
-          type: integer
-          minimum: 1
+        archive_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchivePeriod'
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
+        id:
+          $ref: '#/components/schemas/TemplateId'
+        name:
+          $ref: '#/components/schemas/TemplateName'
         created_at:
           type: string
           format: date-time
+        archived_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        latest_version:
+          type: integer
+          minimum: 1
+        source:
+          type: string
+          maxLength: 1048576
+        schema: {}
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
       required:
-      - version
+      - archive_history
+      - id
+      - name
+      - tags
       - created_at
+      - archived_at
+      - latest_version
+      - source
+      - schema
+      - sizes
       additionalProperties: false
+    TemplateRename:
+      type: object
+      description: Omitted fields keep their current values. Set name to null to clear it, tags to an empty array to clear them, or archived_at to null to restore the template.
+      properties:
+        archived_at:
+          type: 'null'
+          description: Restore the item. Omit this field to keep its archive state.
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
+        name:
+          $ref: '#/components/schemas/TemplateName'
+      additionalProperties: false
+    TemplateName:
+      type:
+      - string
+      - 'null'
+      maxLength: 120
+      description: The customer's own name for a template. It is trimmed and can have 1 to 120 characters. Null or blank means no name.
     TemplatePage:
       type: object
       properties:
@@ -1003,35 +946,92 @@ components:
       - next_cursor
       - tag_options
       additionalProperties: false
-    SizeVariantList:
-      type: array
-      maxItems: 20
-      items:
-        $ref: '#/components/schemas/SizeVariant'
-    PlanLimitInfo:
+    TemplateAdaptResponse:
       type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
       properties:
-        plan:
+        sizes:
+          type: array
+          items:
+            type: object
+            properties:
+              width:
+                type: integer
+              height:
+                type: integer
+              source:
+                type: string
+                maxLength: 1048576
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                    - resize_source_unsupported
+                    - resize_no_layout
+                required:
+                - code
+                additionalProperties: false
+            required:
+            - width
+            - height
+            additionalProperties: false
+      required:
+      - sizes
+      additionalProperties: false
+    TemplateSummary:
+      type: object
+      properties:
+        tags:
+          $ref: '#/components/schemas/TemplateTags'
+        id:
+          $ref: '#/components/schemas/TemplateId'
+        name:
+          $ref: '#/components/schemas/TemplateName'
+        created_at:
           type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
+          format: date-time
+        archived_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        latest_version:
           type: integer
           minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
       required:
-      - plan
-      - limit
+      - id
+      - name
+      - tags
+      - created_at
+      - archived_at
+      - latest_version
+      additionalProperties: false
+    TemplateVersionDetail:
+      type: object
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+          maxLength: 1048576
+        schema: {}
+        sizes:
+          $ref: '#/components/schemas/SizeVariantList'
+      required:
+      - version
+      - created_at
+      - source
+      - schema
+      - sizes
       additionalProperties: false
   responses:
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -1039,8 +1039,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'
@@ -1057,8 +1057,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorEnvelope'
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
       headers:
         x-request-id:
           $ref: '#/components/headers/XRequestId'

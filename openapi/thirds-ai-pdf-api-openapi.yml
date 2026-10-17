@@ -394,50 +394,361 @@ paths:
       tags:
       - PDF
 components:
-  responses:
-    MethodNotAllowed:
-      description: The method is not allowed on this route.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    AccountSuspended:
-      description: The authenticated account is suspended. The code is account_suspended.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    RequestHeadersTooLarge:
-      description: The request has more than 64 headers or more than 32 KiB of header names and values.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Error:
-      description: The one error envelope every backend response uses.
-      headers:
-        x-request-id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
   schemas:
-    PdfRequest:
-      description: 'Exactly one supported PDF input mode: raw HTML, an inline stateless template, or one saved-template version. Image request shapes are not part of this endpoint.'
-      oneOf:
-      - $ref: '#/components/schemas/RawPdfRequest'
-      - $ref: '#/components/schemas/StatelessTemplatePdfRequest'
-      - $ref: '#/components/schemas/SavedTemplatePdfRequest'
+    FieldDetail:
+      type: object
+      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
+      properties:
+        field:
+          type: string
+          maxLength: 260
+          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
+        reason:
+          type: string
+          enum:
+          - malformed JSON
+          - missing field
+          - unknown field
+          - wrong type
+          - invalid value
+          - A required value is missing.
+          - Use the expected value type.
+          - Declare this variable before using it.
+          - Choose an allowed value.
+          - Use the required format.
+          - Add a value.
+          - Use a shorter value.
+          - Use a number within the allowed range.
+          - Check this value against its data rule.
+          description: A fixed, safe reason. It never repeats the value the caller sent.
+        line:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source line when the evaluator provides one within the published bound.
+        column:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: The one-based template source column when the evaluator provides one within the published bound.
+      required:
+      - field
+      - reason
+      additionalProperties: false
+    PdfRequestCommon:
+      type: object
+      description: Render options shared by raw HTML, stateless-template, and saved-template requests. Every field is optional; an absent field takes the renderer's own default.
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: ^(?!.* $)(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9 ._-]*$
+          description: Download name. Surrounding spaces are refused. The server uses the real output extension. Omit it for a safe template-name and UTC creation-date name, or html-render and date for HTML.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        brand_kit_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^kit_[a-f0-9]{32}$
+          description: Select an owned active brand kit. This uses template evaluation and its 1 MiB source and data limits even when data is omitted. Overrides the source thirds-brand-kit meta default. Supplies reserved brand.name, brand.palette, brand.colours.primary/secondary/accent, brand.logo, brand.logos, and brand.fonts entries with family and src. data.brand is refused when a kit is selected. Only present palette roles and logos are supplied. Assets are captured before enqueue. Schemas validate customer data before brand is added.
+        pdf:
+          type: object
+          description: PDF layout options. The page defaults to A4 when neither "format" nor both "width" and "height" are given.
+          properties:
+            format:
+              type: string
+              enum:
+              - A0
+              - A1
+              - A2
+              - A3
+              - A4
+              - A5
+              - A6
+              - Letter
+              - Legal
+              - Ledger
+              - Tabloid
+              description: A named page size, such as "A4" or "Letter". Mutually exclusive with "width"/"height".
+            width:
+              type: string
+              pattern: ^(?:0\.(?=[0-9]{1,4}(?:px|in|cm|mm)$)(?=[0-9]*[1-9])[0-9]{1,4}|[1-9][0-9]*(?:\.[0-9]{1,4})?)(?:px|in|cm|mm)$
+              description: An explicit page width with its unit, such as "8.5in". Requires "height".
+            height:
+              type: string
+              pattern: ^(?:0\.(?=[0-9]{1,4}(?:px|in|cm|mm)$)(?=[0-9]*[1-9])[0-9]{1,4}|[1-9][0-9]*(?:\.[0-9]{1,4})?)(?:px|in|cm|mm)$
+              description: An explicit page height with its unit. Requires "width".
+            margins:
+              type: object
+              description: Each side defaults to "0mm".
+              properties:
+                top:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+                right:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+                bottom:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+                left:
+                  type: string
+                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
+              additionalProperties: false
+            landscape:
+              type: boolean
+              description: Defaults to false.
+            print_background:
+              type: boolean
+              description: Defaults to true.
+            scale:
+              type: number
+              minimum: 0.1
+              maximum: 2.0
+              description: Defaults to 1.0.
+            display_header_footer:
+              type: boolean
+              description: Defaults to false.
+            header_template:
+              type: string
+              maxLength: 100000
+              description: Defaults to empty.
+            footer_template:
+              type: string
+              maxLength: 100000
+              description: Defaults to empty.
+            title:
+              type: string
+              maxLength: 256
+            author:
+              type: string
+              maxLength: 256
+            subject:
+              type: string
+              maxLength: 256
+            password:
+              type: string
+              minLength: 1
+              maxLength: 127
+              description: PDF open password, at most 127 UTF-8 bytes. AES-256 encryption.
+          oneOf:
+          - required:
+            - format
+            not:
+              anyOf:
+              - required:
+                - width
+              - required:
+                - height
+          - required:
+            - width
+            - height
+            not:
+              required:
+              - format
+          - not:
+              anyOf:
+              - required:
+                - format
+              - required:
+                - width
+              - required:
+                - height
+          additionalProperties: false
+        viewport:
+          type: object
+          properties:
+            width:
+              type: integer
+              minimum: 320
+              maximum: 7680
+              description: Defaults to 1280.
+            height:
+              type: integer
+              minimum: 200
+              maximum: 4320
+              description: Defaults to 720.
+            device_scale_factor:
+              type: number
+              minimum: 1.0
+              maximum: 3.0
+              description: Defaults to 1.0.
+          additionalProperties: false
+        javascript:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum:
+              - disabled
+              - enabled
+              description: Defaults to "disabled".
+          additionalProperties: false
+        wait:
+          type: boolean
+          description: Defaults to true. False answers as soon as the job is durable instead of holding the bounded wait; poll GET /v1/pdf/{id} for the terminal result. A delivery preference only — it is not part of the idempotency fingerprint and changes nothing about the render or its cost.
+        pages:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+            pattern: ^[A-Za-z][A-Za-z0-9_-]{0,63}$
+          minItems: 1
+          maxItems: 100
+          description: Canvas data-thirds-page ids in output order. Omitted keeps every page in document order. Duplicate or unknown ids are refused.
+    PdfHistoryItem:
+      type: object
+      description: One job in a bounded account history — the subset of PdfJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
+          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
+        id:
+          type: string
+          pattern: ^pdf_[0-9a-f]{32}$
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        template:
+          type:
+          - object
+          - 'null'
+          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
+          properties:
+            id:
+              $ref: '#/components/schemas/TemplateId'
+            version:
+              type: integer
+              minimum: 1
+          required:
+          - id
+          - version
+          additionalProperties: false
+        credit:
+          type: string
+          enum:
+          - reserved
+          - settled
+          - released
+          - none
+          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
+        artifact:
+          type:
+          - object
+          - 'null'
+          properties:
+            media_type:
+              const: application/pdf
+            byte_size:
+              type: integer
+              minimum: 0
+            sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            expires_at:
+              type: string
+              format: date-time
+              description: When retention ends and the file stops being served.
+            removed_reason:
+              type:
+              - string
+              - 'null'
+              enum:
+              - expired
+              - deleted
+              - null
+          required:
+          - media_type
+          - byte_size
+          - sha256
+          - expires_at
+          - removed_reason
+          additionalProperties: false
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            category:
+              type: string
+              enum:
+              - invalid_input
+              - unsafe_asset
+              - resource_limit
+              - timeout
+              - renderer_failure
+              - internal_failure
+            code:
+              type: string
+          required:
+          - category
+          - code
+          additionalProperties: false
+      required:
+      - id
+      - status
+      - created_at
+      - finished_at
+      - template
+      - credit
+      - artifact
+      - error
+      additionalProperties: false
+    StatelessTemplatePdfRequest:
+      description: A bounded stateless template evaluation followed by the existing PDF render workflow. The request saves no reusable template. Data must be exactly one JSON object. Only evaluated HTML and the effective render options enter short-lived render input storage.
+      allOf:
+      - $ref: '#/components/schemas/PdfRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+            description: The inline Jinja-style template source. The evaluator accepts at most 1,048,576 bytes.
+          data:
+            type: object
+            description: The JSON-compatible data object available to the template. Arrays, scalars, and null are not accepted as the top-level value. Its canonical recursively key-sorted JSON representation may contain at most 1,048,576 bytes; JSON Schema cannot express that serialized-byte bound.
+        required:
+        - html
+        - data
+      unevaluatedProperties: false
+    RawPdfRequest:
+      description: A raw HTML render. The HTML enters the existing render workflow unchanged.
+      allOf:
+      - $ref: '#/components/schemas/PdfRequestCommon'
+      - type: object
+        properties:
+          html:
+            type: string
+            minLength: 1
+            maxLength: 5242880
+            description: The raw HTML document to render. Up to 5,242,880 bytes.
+        required:
+        - html
+      unevaluatedProperties: false
     SavedTemplatePdfRequest:
       description: Render one exact owned saved-template version. Omit version to resolve the latest version once before validation and admission. Data must be exactly one JSON object.
       allOf:
@@ -616,27 +927,26 @@ components:
       required:
       - error
       additionalProperties: false
-    TemplateId:
-      type: string
-      pattern: ^tpl_[0-9a-f]{32}$
-    PdfHistoryPage:
+    PlanLimitInfo:
       type: object
-      description: One bounded page of an account's render history, newest first.
+      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
       properties:
-        items:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/PdfHistoryItem'
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          maxLength: 128
-          description: Pass as the cursor query parameter to read the next page. Null on the last page.
+        plan:
+          type: string
+          enum:
+          - scale
+          - growth
+          - starter
+          - pack
+          - free
+          description: The account's plan at the time of the refusal.
+        limit:
+          type: integer
+          minimum: 1
+          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
       required:
-      - items
-      - next_cursor
+      - plan
+      - limit
       additionalProperties: false
     PdfJob:
       type: object
@@ -773,6 +1083,34 @@ components:
       - error
       - download
       additionalProperties: false
+    PdfHistoryPage:
+      type: object
+      description: One bounded page of an account's render history, newest first.
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PdfHistoryItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+          description: Pass as the cursor query parameter to read the next page. Null on the last page.
+      required:
+      - items
+      - next_cursor
+      additionalProperties: false
+    TemplateId:
+      type: string
+      pattern: ^tpl_[0-9a-f]{32}$
+    PdfRequest:
+      description: 'Exactly one supported PDF input mode: raw HTML, an inline stateless template, or one saved-template version. Image request shapes are not part of this endpoint.'
+      oneOf:
+      - $ref: '#/components/schemas/RawPdfRequest'
+      - $ref: '#/components/schemas/StatelessTemplatePdfRequest'
+      - $ref: '#/components/schemas/SavedTemplatePdfRequest'
     RetryInfo:
       type: object
       description: How long the caller must wait before it retries.
@@ -784,381 +1122,43 @@ components:
       required:
       - retry_after_seconds
       additionalProperties: false
-    StatelessTemplatePdfRequest:
-      description: A bounded stateless template evaluation followed by the existing PDF render workflow. The request saves no reusable template. Data must be exactly one JSON object. Only evaluated HTML and the effective render options enter short-lived render input storage.
-      allOf:
-      - $ref: '#/components/schemas/PdfRequestCommon'
-      - type: object
-        properties:
-          html:
-            type: string
-            minLength: 1
-            maxLength: 1048576
-            description: The inline Jinja-style template source. The evaluator accepts at most 1,048,576 bytes.
-          data:
-            type: object
-            description: The JSON-compatible data object available to the template. Arrays, scalars, and null are not accepted as the top-level value. Its canonical recursively key-sorted JSON representation may contain at most 1,048,576 bytes; JSON Schema cannot express that serialized-byte bound.
-        required:
-        - html
-        - data
-      unevaluatedProperties: false
-    PdfRequestCommon:
-      type: object
-      description: Render options shared by raw HTML, stateless-template, and saved-template requests. Every field is optional; an absent field takes the renderer's own default.
-      properties:
-        filename:
-          type: string
-          minLength: 1
-          maxLength: 120
-          pattern: ^(?!.* $)(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9 ._-]*$
-          description: Download name. Surrounding spaces are refused. The server uses the real output extension. Omit it for a safe template-name and UTC creation-date name, or html-render and date for HTML.
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
-          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
-        brand_kit_id:
-          type:
-          - string
-          - 'null'
-          pattern: ^kit_[a-f0-9]{32}$
-          description: Select an owned active brand kit. This uses template evaluation and its 1 MiB source and data limits even when data is omitted. Overrides the source thirds-brand-kit meta default. Supplies reserved brand.name, brand.palette, brand.colours.primary/secondary/accent, brand.logo, brand.logos, and brand.fonts entries with family and src. data.brand is refused when a kit is selected. Only present palette roles and logos are supplied. Assets are captured before enqueue. Schemas validate customer data before brand is added.
-        pdf:
-          type: object
-          description: PDF layout options. The page defaults to A4 when neither "format" nor both "width" and "height" are given.
-          properties:
-            format:
-              type: string
-              enum:
-              - A0
-              - A1
-              - A2
-              - A3
-              - A4
-              - A5
-              - A6
-              - Letter
-              - Legal
-              - Ledger
-              - Tabloid
-              description: A named page size, such as "A4" or "Letter". Mutually exclusive with "width"/"height".
-            width:
-              type: string
-              pattern: ^(?:0\.(?=[0-9]{1,4}(?:px|in|cm|mm)$)(?=[0-9]*[1-9])[0-9]{1,4}|[1-9][0-9]*(?:\.[0-9]{1,4})?)(?:px|in|cm|mm)$
-              description: An explicit page width with its unit, such as "8.5in". Requires "height".
-            height:
-              type: string
-              pattern: ^(?:0\.(?=[0-9]{1,4}(?:px|in|cm|mm)$)(?=[0-9]*[1-9])[0-9]{1,4}|[1-9][0-9]*(?:\.[0-9]{1,4})?)(?:px|in|cm|mm)$
-              description: An explicit page height with its unit. Requires "width".
-            margins:
-              type: object
-              description: Each side defaults to "0mm".
-              properties:
-                top:
-                  type: string
-                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
-                right:
-                  type: string
-                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
-                bottom:
-                  type: string
-                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
-                left:
-                  type: string
-                  pattern: ^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,4})?(?:px|in|cm|mm)$
-              additionalProperties: false
-            landscape:
-              type: boolean
-              description: Defaults to false.
-            print_background:
-              type: boolean
-              description: Defaults to true.
-            scale:
-              type: number
-              minimum: 0.1
-              maximum: 2.0
-              description: Defaults to 1.0.
-            display_header_footer:
-              type: boolean
-              description: Defaults to false.
-            header_template:
-              type: string
-              maxLength: 100000
-              description: Defaults to empty.
-            footer_template:
-              type: string
-              maxLength: 100000
-              description: Defaults to empty.
-            title:
-              type: string
-              maxLength: 256
-            author:
-              type: string
-              maxLength: 256
-            subject:
-              type: string
-              maxLength: 256
-            password:
-              type: string
-              minLength: 1
-              maxLength: 127
-              description: PDF open password, at most 127 UTF-8 bytes. AES-256 encryption.
-          oneOf:
-          - required:
-            - format
-            not:
-              anyOf:
-              - required:
-                - width
-              - required:
-                - height
-          - required:
-            - width
-            - height
-            not:
-              required:
-              - format
-          - not:
-              anyOf:
-              - required:
-                - format
-              - required:
-                - width
-              - required:
-                - height
-          additionalProperties: false
-        viewport:
-          type: object
-          properties:
-            width:
-              type: integer
-              minimum: 320
-              maximum: 7680
-              description: Defaults to 1280.
-            height:
-              type: integer
-              minimum: 200
-              maximum: 4320
-              description: Defaults to 720.
-            device_scale_factor:
-              type: number
-              minimum: 1.0
-              maximum: 3.0
-              description: Defaults to 1.0.
-          additionalProperties: false
-        javascript:
-          type: object
-          properties:
-            mode:
-              type: string
-              enum:
-              - disabled
-              - enabled
-              description: Defaults to "disabled".
-          additionalProperties: false
-        wait:
-          type: boolean
-          description: Defaults to true. False answers as soon as the job is durable instead of holding the bounded wait; poll GET /v1/pdf/{id} for the terminal result. A delivery preference only — it is not part of the idempotency fingerprint and changes nothing about the render or its cost.
-        pages:
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 64
-            pattern: ^[A-Za-z][A-Za-z0-9_-]{0,63}$
-          minItems: 1
-          maxItems: 100
-          description: Canvas data-thirds-page ids in output order. Omitted keeps every page in document order. Duplicate or unknown ids are refused.
-    FieldDetail:
-      type: object
-      description: One request field that failed, its fixed safe reason, and an optional bounded source location. Details never carry template source, customer values, rendered output, or raw evaluator prose.
-      properties:
-        field:
-          type: string
-          maxLength: 260
-          description: The path to the field, such as "pdf.scale". Schema errors use data followed by a JSON Pointer, such as data/items/0/count. The pointer is cut at 256 UTF-8 bytes. Empty for a problem with the whole document.
-        reason:
-          type: string
-          enum:
-          - malformed JSON
-          - missing field
-          - unknown field
-          - wrong type
-          - invalid value
-          - A required value is missing.
-          - Use the expected value type.
-          - Declare this variable before using it.
-          - Choose an allowed value.
-          - Use the required format.
-          - Add a value.
-          - Use a shorter value.
-          - Use a number within the allowed range.
-          - Check this value against its data rule.
-          description: A fixed, safe reason. It never repeats the value the caller sent.
-        line:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source line when the evaluator provides one within the published bound.
-        column:
-          type: integer
-          minimum: 1
-          maximum: 1000000
-          description: The one-based template source column when the evaluator provides one within the published bound.
-      required:
-      - field
-      - reason
-      additionalProperties: false
-    PdfHistoryItem:
-      type: object
-      description: One job in a bounded account history — the subset of PdfJob a history page lists. Never carries a download link, since a history page can name many jobs at once.
-      properties:
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: ^[^\u0000-\u001f\u007f-\u009f]+$
-          description: Your reference, preserved in the job, history, and webhook. Omitted when not supplied.
-        id:
-          type: string
-          pattern: ^pdf_[0-9a-f]{32}$
-        status:
-          type: string
-          enum:
-          - queued
-          - running
-          - succeeded
-          - failed
-          - cancelled
-        created_at:
-          type: string
-          format: date-time
-        finished_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        template:
-          type:
-          - object
-          - 'null'
-          description: The exact saved template version this job rendered. Null for raw HTML or an inline stateless template.
-          properties:
-            id:
-              $ref: '#/components/schemas/TemplateId'
-            version:
-              type: integer
-              minimum: 1
-          required:
-          - id
-          - version
-          additionalProperties: false
-        credit:
-          type: string
-          enum:
-          - reserved
-          - settled
-          - released
-          - none
-          description: 'What happened to the credit this job holds: "reserved" while it is queued or running, "settled" once it succeeded, "released" once it failed or was cancelled, and "none" when the job was never billed.'
-        artifact:
-          type:
-          - object
-          - 'null'
-          properties:
-            media_type:
-              const: application/pdf
-            byte_size:
-              type: integer
-              minimum: 0
-            sha256:
-              type: string
-              pattern: ^[0-9a-f]{64}$
-            expires_at:
-              type: string
-              format: date-time
-              description: When retention ends and the file stops being served.
-            removed_reason:
-              type:
-              - string
-              - 'null'
-              enum:
-              - expired
-              - deleted
-              - null
-          required:
-          - media_type
-          - byte_size
-          - sha256
-          - expires_at
-          - removed_reason
-          additionalProperties: false
-        error:
-          type:
-          - object
-          - 'null'
-          properties:
-            category:
-              type: string
-              enum:
-              - invalid_input
-              - unsafe_asset
-              - resource_limit
-              - timeout
-              - renderer_failure
-              - internal_failure
-            code:
-              type: string
-          required:
-          - category
-          - code
-          additionalProperties: false
-      required:
-      - id
-      - status
-      - created_at
-      - finished_at
-      - template
-      - credit
-      - artifact
-      - error
-      additionalProperties: false
-    RawPdfRequest:
-      description: A raw HTML render. The HTML enters the existing render workflow unchanged.
-      allOf:
-      - $ref: '#/components/schemas/PdfRequestCommon'
-      - type: object
-        properties:
-          html:
-            type: string
-            minLength: 1
-            maxLength: 5242880
-            description: The raw HTML document to render. Up to 5,242,880 bytes.
-        required:
-        - html
-      unevaluatedProperties: false
-    PlanLimitInfo:
-      type: object
-      description: 'Present when the account''s plan causes the refusal: brand_kit_limit and batch_row_limit. It names the limit and the plan that sets it, so a caller can act without a second request. The message text never names the number.'
-      properties:
-        plan:
-          type: string
-          enum:
-          - scale
-          - growth
-          - starter
-          - pack
-          - free
-          description: The account's plan at the time of the refusal.
-        limit:
-          type: integer
-          minimum: 1
-          description: 'What that plan allows: brand kits for brand_kit_limit, rows in one run for batch_row_limit.'
-      required:
-      - plan
-      - limit
-      additionalProperties: false
+  responses:
+    Error:
+      description: The one error envelope every backend response uses.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    MethodNotAllowed:
+      description: The method is not allowed on this route.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RequestHeadersTooLarge:
+      description: The request has more than 64 headers or more than 32 KiB of header names and values.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    AccountSuspended:
+      description: The authenticated account is suspended. The code is account_suspended.
+      headers:
+        x-request-id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
   headers:
     XRequestId:
       description: The UUID that identifies this request and matches error.request_id on an error response.
